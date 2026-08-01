@@ -9,8 +9,8 @@ still requires formal trademark clearance before public launch.
 M0 establishes the architecture, security boundaries, decision records, runnable
 workspace, and a deterministic React Flow performance fixture. It intentionally does
 not implement product authentication, paid AI calls, or ingestion. Engineering defaults
-are owner-approved for implementation; M0 remains open for the remaining reference-device,
-native-browser and remote-CI gates in the decision register.
+are owner-approved for implementation and remote CI passes; M0 remains open for the
+remaining reference-device and native-browser gates in the decision register.
 
 ## Prerequisites
 

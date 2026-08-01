@@ -2,8 +2,9 @@
 
 Last updated: 2026-08-01
 
-Status: **local engineering verification and owner implementation approval complete; M0
-remains open for reference-device evidence, native-browser smoke, and a remote CI run.**
+Status: **local engineering verification, owner implementation approval, initial push,
+and remote CI complete; M0 remains open for reference-device evidence and native-browser
+smoke.**
 
 This report records checks actually run for the repository's initial M0 baseline. It is
 not evidence that M1–M5 product journeys are implemented.
@@ -76,20 +77,21 @@ limitations and audit trail.
 
 ## CI and reproducibility status
 
-The prepared workflow at `.github/workflows/ci.yml` provisions fresh PostgreSQL runtime
-roles, applies migrations twice and runs static, unit, integration, dependency, build and
-three-browser checks. Its YAML parses locally. This report is part of the initial commit,
-so it does not embed a self-referential commit SHA; use `git rev-parse HEAD` to identify
-the local baseline. No Git remote is configured, so no workflow run or URL exists yet.
+The workflow at `.github/workflows/ci.yml` provisions fresh PostgreSQL runtime roles,
+applies migrations twice and runs static, unit, integration, dependency, build and
+three-browser checks. Initial baseline commit
+[`95b86e0258f45dac7f55e56402115adbba4b66e8`](https://github.com/Danielkh96/Poppyai/commit/95b86e0258f45dac7f55e56402115adbba4b66e8)
+was pushed to `main`. GitHub Actions
+[`CI #30692806616`](https://github.com/Danielkh96/Poppyai/actions/runs/30692806616)
+completed successfully in 2 minutes 33 seconds, including 9/9 Chromium, Firefox and
+WebKit smoke tests.
 
 ## Remaining M0 gates
 
 1. Reproduce and approve the performance gate on the M1-class/8-GiB reference device.
 2. Run current native Safari and Edge smoke tests; Playwright WebKit/Chromium are not the
    same as those native release binaries.
-3. Configure a Git remote, push the initial baseline and run the prepared CI workflow;
-   then append its commit SHA and workflow URL here.
-4. Complete the legal, procurement and paid-service gates listed in
+3. Complete the legal, procurement and paid-service gates listed in
    [`decision-register.md`](decision-register.md) before external alpha or deployment.
 
 Until those gates are recorded, development may proceed against the documented defaults,

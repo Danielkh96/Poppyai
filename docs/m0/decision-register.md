@@ -85,3 +85,4 @@ external alpha or paid deployment, the project still requires:
 - [x] Product owner implementation approval recorded; stated legal/procurement/paid-use
       gates remain in force.
 - [x] Product specification and ADR set approved for implementation by the product owner.
+- [x] Initial baseline pushed to GitHub and the complete remote CI workflow passed.
