@@ -4,13 +4,13 @@ Siftloom is an original visual AI workspace for arranging sources on a canvas an
 producing grounded answers from explicitly connected context. The working product name
 still requires formal trademark clearance before public launch.
 
-## M0 status
+## M1 status
 
-M0 establishes the architecture, security boundaries, decision records, runnable
-workspace, and a deterministic React Flow performance fixture. It intentionally does
-not implement product authentication, paid AI calls, or ingestion. Engineering defaults
-are owner-approved for implementation and remote CI passes; M0 remains open for the
-remaining reference-device and native-browser gates in the decision register.
+M1 adds real database-backed sessions, idempotent personal-workspace provisioning, and
+the tenant-safe Board lifecycle: list, create, open, rename, archive, and restore. The UI
+includes empty, loading, error, and retry states. Local and CI environments may enable
+email/password authentication for deterministic testing; production uses configured
+Google OIDC and/or email magic links. Ingestion and paid AI calls remain out of scope.
 
 ## Prerequisites
 
@@ -28,12 +28,19 @@ corepack pnpm db:migrate
 corepack pnpm dev
 ```
 
-Open <http://localhost:3000>. The M0 canvas fixture is at
+Open <http://localhost:3000> and use <http://localhost:3000/sign-in> to enter the M1
+workspace. The M0 canvas fixture remains available at
 <http://localhost:3000/prototype/canvas>.
 
 The root `dev` command starts both the web process and worker with the root `.env` loaded.
 Use `corepack pnpm dev:web` when only the UI is needed. Migrations use the local admin
-URL; web and worker use separate `NOSUPERUSER`/`NOBYPASSRLS` roles.
+URL; auth, web, and worker use separate `NOSUPERUSER`/`NOBYPASSRLS` roles. The auth role
+can access only Better Auth identity tables, while the web role reaches business data
+through RLS-scoped transactions and a narrow default-workspace provisioning function.
+
+`AUTH_ENABLE_PASSWORD=true` is honored only outside production. For a production login
+path, configure `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` and/or
+`RESEND_API_KEY`/`AUTH_EMAIL_FROM`. Never commit real values.
 
 ## Required root checks
 
@@ -48,8 +55,9 @@ corepack pnpm build
 corepack pnpm test:e2e
 ```
 
-The database test is intentionally separate from unit tests and fails if its admin and
-real runtime URLs are absent; copying `.env.example` supplies safe local-only values.
+The database test is intentionally separate from unit tests and fails if its admin,
+auth-role, and real runtime URLs are absent; copying `.env.example` supplies safe
+local-only values.
 
 Run the 5-second canvas baseline with `corepack pnpm benchmark:canvas`. For the M0 soak,
 set `CANVAS_BENCHMARK_MS=900000`; it builds/starts the production Next.js bundle, disables

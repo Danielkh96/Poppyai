@@ -37,8 +37,8 @@ export default function HomePage() {
           <a href="/api/health" className="quiet-link">
             Health
           </a>
-          <Link href="/prototype/canvas" className="nav-action">
-            Canvas spike <ArrowRight size={15} />
+          <Link href="/sign-in" className="nav-action">
+            进入工作区 <ArrowRight size={15} />
           </Link>
         </div>
       </nav>
@@ -52,11 +52,11 @@ export default function HomePage() {
             上下文。
           </p>
           <div className="hero-actions">
-            <Link href="/prototype/canvas" className="primary-action">
-              <Gauge size={17} /> 打开画布基准 <ArrowRight size={16} />
+            <Link href="/sign-in" className="primary-action">
+              <Gauge size={17} /> 创建第一张 Board <ArrowRight size={16} />
             </Link>
             <span className="build-status">
-              <Check size={15} /> runnable M0 scaffold
+              <Check size={15} /> M1 identity & boards
             </span>
           </div>
           <div className="principle-row" aria-label="产品原则">
@@ -161,18 +161,17 @@ export default function HomePage() {
           <span className="eyebrow">Next gate</span>
           <h2>M1：身份、租户与 Board 生命周期</h2>
           <p>
-            完成 owner 审批和 M0 性能基线后，即可进入真实认证、默认 workspace
-            与跨租户测试矩阵。
+            真实会话、默认 workspace 与 Board 创建、重命名、归档和恢复已进入可运行路径。
           </p>
         </div>
         <Link href="/prototype/canvas" className="secondary-action">
-          查看 M0 原型 <ArrowRight size={16} />
+          查看 M0 画布基准 <ArrowRight size={16} />
         </Link>
       </section>
 
       <footer className="site-footer">
         <span>Siftloom · working name pending legal clearance</span>
-        <span>M0 / 2026-08-01</span>
+        <span>M1 / 2026-08-01</span>
       </footer>
     </main>
   );

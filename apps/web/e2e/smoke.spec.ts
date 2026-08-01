@@ -1,15 +1,15 @@
 import { expect, test } from "@playwright/test";
 
-test("M0 overview exposes the architecture and canvas prototype", async ({ page }) => {
+test("M1 overview exposes the authenticated workspace", async ({ page }) => {
   await page.goto("/");
 
   await expect(page).toHaveTitle(/Siftloom/);
   await expect(
     page.getByRole("heading", { name: "把零散来源，编织成可追溯答案。" })
   ).toBeVisible();
-  await expect(page.getByRole("link", { name: /打开画布基准/ })).toHaveAttribute(
+  await expect(page.getByRole("link", { name: /创建第一张 Board/ })).toHaveAttribute(
     "href",
-    "/prototype/canvas"
+    "/sign-in"
   );
 });
 
@@ -19,7 +19,7 @@ test("health route is private-content free", async ({ request }) => {
   await expect(response.json()).resolves.toEqual({
     status: "ok",
     service: "siftloom-web",
-    milestone: "M0",
+    milestone: "M1",
     time: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/)
   });
 });

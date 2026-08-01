@@ -7,15 +7,18 @@
     "build": "next build",
     "start": "next start --hostname 127.0.0.1",
     "typecheck": "tsc --noEmit",
-    "test:e2e": "playwright test e2e/smoke.spec.ts",
+    "test:e2e": "playwright test e2e/smoke.spec.ts e2e/board-lifecycle.spec.ts",
     "benchmark:canvas": "PLAYWRIGHT_PRODUCTION=1 WRITE_BENCHMARK_RESULT=1 playwright test e2e/canvas-benchmark.spec.ts --project=chromium --reporter=line"
   },
   "dependencies": {
+    "@siftloom/db": "workspace:*",
     "@siftloom/shared": "workspace:*",
     "@siftloom/ui": "workspace:*",
+    "better-auth": "1.6.25",
     "lucide-react": "1.28.0",
     "next": "16.2.12",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "zod": "4.4.3"
   }
 }

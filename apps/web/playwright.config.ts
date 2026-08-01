@@ -23,8 +23,8 @@ export default defineConfig({
   ],
   webServer: {
     command: useProductionServer
-      ? `corepack pnpm build && corepack pnpm exec next start --hostname 127.0.0.1 --port ${port}`
-      : `corepack pnpm exec next dev --hostname 127.0.0.1 --port ${port}`,
+      ? `BETTER_AUTH_URL=${baseURL} corepack pnpm build && BETTER_AUTH_URL=${baseURL} corepack pnpm exec next start --hostname 127.0.0.1 --port ${port}`
+      : `BETTER_AUTH_URL=${baseURL} corepack pnpm exec next dev --hostname 127.0.0.1 --port ${port}`,
     url: `${baseURL}/api/health`,
     reuseExistingServer: false,
     timeout: 120_000

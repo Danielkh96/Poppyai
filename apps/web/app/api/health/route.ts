@@ -7,7 +7,7 @@ export function GET() {
     {
       status: "ok",
       service: "siftloom-web",
-      milestone: "M0",
+      milestone: "M1",
       time: new Date().toISOString()
     },
     {

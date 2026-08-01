@@ -22,19 +22,19 @@ flowchart LR
     W -->|"SSE deltas; canonical refetch"| B
 ```
 
-## M0 implementation status
+## M1 implementation status
 
 This document describes the approved target architecture. Acceptance of an ADR is not a
 claim that its product path is already implemented.
 
-| Area                 | Present in M0                                                                                          | Planned milestone                                                           |
-| -------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
-| Web/worker workspace | Runnable Next.js shell, health route, worker boot and pg-boss schema bootstrap                         | Product routes and job handlers in M1–M4                                    |
-| Tenant data boundary | Core graph schema, composite FKs, runtime roles, RLS transaction helper, real two-tenant database test | Session-bound repositories and complete resource matrix in M1               |
-| Canvas               | Project-owned React Flow adapter and deterministic 200/300 dynamic benchmark                           | Persistent editing/autosave in M2                                           |
-| Storage/ingestion    | Interfaces, central limits, URL request-shape validation, local S3Mock                                 | Signed S3 adapter and isolated ingestion pipeline in M3                     |
-| AI                   | Provider-neutral contract and deterministic fake                                                       | Context manifests, live evaluated adapter, SSE and usage finalization in M4 |
-| Authentication       | Better Auth decision and threat controls only                                                          | Actual database sessions, Google OIDC and magic link in M1                  |
+| Area                 | Present through M1                                                                                                    | Planned milestone                                                           |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Web/worker workspace | Runnable Next.js shell, authenticated Board routes/UI, health route, worker boot and pg-boss schema bootstrap         | Canvas, ingestion, and AI handlers in M2–M4                                 |
+| Tenant data boundary | Composite FKs, non-bypass roles, RLS transactions, idempotent personal workspace, scoped Board repositories and tests | Extend the authorization matrix with each M2–M4 resource                    |
+| Canvas               | Project-owned React Flow adapter and deterministic 200/300 dynamic benchmark                                          | Persistent editing/autosave in M2                                           |
+| Storage/ingestion    | Interfaces, central limits, URL request-shape validation, local S3Mock                                                | Signed S3 adapter and isolated ingestion pipeline in M3                     |
+| AI                   | Provider-neutral contract and deterministic fake                                                                      | Context manifests, live evaluated adapter, SSE and usage finalization in M4 |
+| Authentication       | Better Auth sessions, dedicated auth role, local test password flow, configurable Google OIDC and hashed magic links  | Production provider credentials and delivery contract checks before alpha   |
 
 ## Repository topology
 
@@ -104,7 +104,10 @@ metadata are recorded in PostgreSQL.
 Every practical tenant-owned table carries `workspace_id`. Composite foreign keys ensure
 that board, node, edge, asset, chat, and attempt parents share the same workspace. Global
 UUIDs reduce guessing but are not authorization. Better Auth identity tables remain
-global; domain membership performs authorization.
+global; domain membership performs authorization. The dedicated `siftloom_auth` role can
+read and mutate only identity/session tables. The `siftloom_web` role cannot access those
+tables and provisions a personal workspace only through a fixed-search-path,
+`SECURITY DEFINER` function that verifies the transaction-local actor ID.
 
 Migrations use this one-way authority:
 
@@ -168,9 +171,12 @@ unusual quota spend.
   Chromium, Firefox and WebKit.
 - M0 performance evidence: fixed 200-node/300-edge fixture, 1440×900 interaction run,
   long-task/pointer-to-paint sampling and a controller-active 15-minute post-GC soak.
-- M1–M4 add the complete repository/API/worker authorization matrix, queue transaction /
-  rollback / lease / retry tests, S3 lifecycle, session/CSRF, SSRF/XSS/prompt-injection
-  corpora, autosave conflicts and the grounded stream/cancel/refetch journey.
+- M1 evidence: concurrent idempotent workspace/Board creation, auth-role separation,
+  Board lifecycle repositories, forged-scope/cross-tenant 404s, session invalidation,
+  and the full UI journey on Chromium, Firefox, and WebKit.
+- M2–M4 add the remaining repository/API/worker authorization matrix, queue transaction /
+  rollback / lease / retry tests, S3 lifecycle, SSRF/XSS/prompt-injection corpora,
+  autosave conflicts and the grounded stream/cancel/refetch journey.
 
 ## Sources behind current technical choices
 
