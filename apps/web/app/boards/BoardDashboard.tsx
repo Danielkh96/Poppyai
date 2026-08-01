@@ -15,6 +15,8 @@ import { z } from "zod";
 
 import { boardSummarySchema, type BoardSummary } from "@siftloom/shared";
 
+import { useHydrated } from "@/lib/use-hydrated";
+
 const boardResponseSchema = z.object({ board: boardSummarySchema });
 const boardListResponseSchema = z.object({ boards: z.array(boardSummarySchema) });
 
@@ -37,6 +39,7 @@ async function responseMessage(response: Response): Promise<string> {
 }
 
 export function BoardDashboard({ initialActive, initialArchived }: BoardDashboardProps) {
+  const interactive = useHydrated();
   const [active, setActive] = useState([...initialActive]);
   const [archived, setArchived] = useState([...initialArchived]);
   const [view, setView] = useState<View>("active");
@@ -151,7 +154,11 @@ export function BoardDashboard({ initialActive, initialArchived }: BoardDashboar
               onChange={(event) => setName(event.target.value)}
               placeholder="留空将使用默认名称"
             />
-            <button type="submit" disabled={pending !== null}>
+            <button
+              type="submit"
+              disabled={!interactive || pending !== null}
+              suppressHydrationWarning
+            >
               {pending === "create" ? (
                 <LoaderCircle className="spin" size={17} />
               ) : (

@@ -14,8 +14,9 @@ test("authenticated users can complete the board lifecycle with tenant isolation
   await page.goto("/boards");
   await expect(page.getByRole("heading", { name: "你的 Boards" })).toBeVisible();
 
-  const boardName = `Launch sources · ${browserName}`;
-  const renamedBoardName = `Renamed sources · ${browserName}`;
+  const testRun = crypto.randomUUID().slice(0, 8);
+  const boardName = `Launch sources · ${browserName} · ${testRun}`;
+  const renamedBoardName = `Renamed sources · ${browserName} · ${testRun}`;
   await page.getByLabel("新 Board 名称").fill(boardName);
   await page.getByRole("button", { name: "创建" }).click();
   const launchCard = page.getByRole("article").filter({ hasText: boardName });

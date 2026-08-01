@@ -4,6 +4,7 @@ import { ArrowRight, KeyRound, LoaderCircle, Mail } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 import { authClient } from "@/lib/auth-client";
+import { useHydrated } from "@/lib/use-hydrated";
 
 interface AuthPanelProps {
   readonly capabilities: {
@@ -16,6 +17,7 @@ interface AuthPanelProps {
 type PasswordMode = "sign-in" | "sign-up";
 
 export function AuthPanel({ capabilities }: AuthPanelProps) {
+  const interactive = useHydrated();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
@@ -73,7 +75,8 @@ export function AuthPanel({ capabilities }: AuthPanelProps) {
         <button
           className="auth-provider"
           type="button"
-          disabled={pending}
+          disabled={!interactive || pending}
+          suppressHydrationWarning
           onClick={() =>
             void authClient.signIn.social({ provider: "google", callbackURL: "/boards" })
           }
@@ -148,7 +151,12 @@ export function AuthPanel({ capabilities }: AuthPanelProps) {
               />
             </label>
           ) : null}
-          <button className="auth-submit" type="submit" disabled={pending}>
+          <button
+            className="auth-submit"
+            type="submit"
+            disabled={!interactive || pending}
+            suppressHydrationWarning
+          >
             {pending ? <LoaderCircle className="spin" size={17} /> : <Mail size={17} />}
             {capabilities.password
               ? passwordMode === "sign-up"
