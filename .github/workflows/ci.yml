@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:17.9-alpine
+        env:
+          POSTGRES_DB: siftloom
+          POSTGRES_USER: siftloom_admin
+          POSTGRES_PASSWORD: siftloom_admin_ci_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U siftloom_admin -d siftloom"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      MIGRATION_DATABASE_URL: postgresql://siftloom_admin:siftloom_admin_ci_only@localhost:5432/siftloom
+      TEST_DATABASE_URL: postgresql://siftloom_admin:siftloom_admin_ci_only@localhost:5432/siftloom
+      TEST_RUNTIME_DATABASE_URL: postgresql://siftloom_web:siftloom_web_ci_only@localhost:5432/siftloom
+      TEST_WORKER_DATABASE_URL: postgresql://siftloom_worker:siftloom_worker_ci_only@localhost:5432/siftloom
+      AI_PROVIDER: fake
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.14.1
+          package-manager-cache: false
+
+      - name: Enable pinned pnpm
+        run: corepack enable && corepack prepare pnpm@11.18.0 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create non-bypass runtime roles
+        env:
+          PGPASSWORD: siftloom_admin_ci_only
+        run: >-
+          psql -v ON_ERROR_STOP=1 -h localhost -U siftloom_admin -d siftloom
+          -c "create role siftloom_web login password 'siftloom_web_ci_only'
+          nosuperuser nocreatedb nocreaterole noinherit nobypassrls;
+          create role siftloom_worker login password 'siftloom_worker_ci_only'
+          nosuperuser nocreatedb nocreaterole noinherit nobypassrls;"
+
+      - name: Apply reviewed migrations twice
+        run: pnpm db:migrate && pnpm db:migrate
+
+      - name: Static, unit, integration, and dependency checks
+        run: >-
+          pnpm format:check && pnpm lint && pnpm typecheck && pnpm test &&
+          pnpm test:db && pnpm audit:deps
+
+      - name: Build production artifacts
+        run: pnpm build
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium firefox webkit
+
+      - name: Run browser smoke suite
+        run: pnpm test:e2e

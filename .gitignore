@@ -1,0 +1,15 @@
+.DS_Store
+.env*
+!.env.example
+
+node_modules/
+.pnpm-store/
+.next/
+dist/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+docs/performance/latest.local.json
+
+.s3mock/

@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1785568040297,
+      "tag": "0000_redundant_darwin",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785568867802,
+      "tag": "0001_lock_runtime_membership_policies",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785569855860,
+      "tag": "0002_grant_runtime_roles",
+      "breakpoints": true
+    }
+  ]
+}

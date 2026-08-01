@@ -1,0 +1,32 @@
+{
+  "evidenceStatus": "diagnostic_failed",
+  "acceptanceNote": "Not eligible to close M0: post-GC heap growth exceeded 20%, and the final sample raced the benchmark controller teardown in this harness revision.",
+  "measuredAt": "2026-08-01T08:15:35.285Z",
+  "browserName": "chromium",
+  "browserVersion": "151.0.7922.34",
+  "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.7922.34 Safari/537.36",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "result": {
+    "durationMs": 900010,
+    "nodeCount": 200,
+    "edgeCount": 300,
+    "sampledFrames": 53990,
+    "p95FrameTimeMs": 17.2,
+    "framesWithin20msPercent": 99.99,
+    "pointerToPaintP95Ms": 15.6,
+    "longestTaskMs": 0,
+    "stateUpdateCycles": 3539,
+    "heapStartBytes": 18200000,
+    "heapEndBytes": 18200000,
+    "heapGrowthPercent": 0
+  },
+  "soakHeap": {
+    "method": "CDP HeapProfiler.collectGarbage + Runtime.getHeapUsage",
+    "minuteFiveUsedBytes": 9490736,
+    "minuteFifteenUsedBytes": 20050120,
+    "growthPercent": 111.26
+  }
+}

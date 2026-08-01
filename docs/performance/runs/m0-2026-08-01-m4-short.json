@@ -1,0 +1,35 @@
+{
+  "measuredAt": "2026-08-01T07:55:58.245Z",
+  "host": {
+    "model": "MacBook Air Mac16,13",
+    "chip": "Apple M4, 10 cores",
+    "memoryGiB": 16,
+    "os": "macOS 26.5.2 (25F84)",
+    "node": "24.14.1",
+    "pnpm": "11.18.0"
+  },
+  "fingerprint": {
+    "pnpmLockSha256": "992e2ea99022f8783409b1f6ab08923a4ed0dc12c50e1668cd98a92647071a4f",
+    "fixtureSha256": "d1697d4dcbf855dee239bdbab36b7ffc0a3802410747e834d47179d828a25b7b",
+    "canvasAdapterSha256": "f4dd630100e5c35d28d2156d8703d0c0b31c7aa5c6ee839f7990e198c9ade06d",
+    "harnessSha256": "ae464955d6932809255f125cdedbed40ce48989dba5fc1eec0ff50de14427ecc"
+  },
+  "browserName": "chromium",
+  "browserVersion": "151.0.7922.34",
+  "viewport": { "width": 1440, "height": 900 },
+  "result": {
+    "durationMs": 5005,
+    "nodeCount": 200,
+    "edgeCount": 300,
+    "sampledFrames": 299,
+    "p95FrameTimeMs": 17.6,
+    "framesWithin20msPercent": 100,
+    "pointerToPaintP95Ms": 15.9,
+    "longestTaskMs": 0,
+    "stateUpdateCycles": 19,
+    "heapStartBytes": 17100000,
+    "heapEndBytes": 17100000,
+    "heapGrowthPercent": 0
+  },
+  "soakHeap": null
+}

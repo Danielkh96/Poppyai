@@ -1,0 +1,16 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+allowBuilds:
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
+minimumReleaseAgeExclude:
+  - "@aws-sdk/client-s3@3.1101.0"
+  - "@aws-sdk/s3-request-presigner@3.1101.0"
+  - "@types/pg@8.20.3"
+  - pg-boss@12.26.4
+overrides:
+  "@esbuild-kit/core-utils>esbuild": 0.25.0
+  "next>postcss": 8.5.25
+  "next>sharp": 0.35.3
