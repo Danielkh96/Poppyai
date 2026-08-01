@@ -22,19 +22,19 @@ flowchart LR
     W -->|"SSE deltas; canonical refetch"| B
 ```
 
-## M1 implementation status
+## M2 implementation status
 
 This document describes the approved target architecture. Acceptance of an ADR is not a
 claim that its product path is already implemented.
 
-| Area                 | Present through M1                                                                                                    | Planned milestone                                                           |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| Web/worker workspace | Runnable Next.js shell, authenticated Board routes/UI, health route, worker boot and pg-boss schema bootstrap         | Canvas, ingestion, and AI handlers in M2–M4                                 |
-| Tenant data boundary | Composite FKs, non-bypass roles, RLS transactions, idempotent personal workspace, scoped Board repositories and tests | Extend the authorization matrix with each M2–M4 resource                    |
-| Canvas               | Project-owned React Flow adapter and deterministic 200/300 dynamic benchmark                                          | Persistent editing/autosave in M2                                           |
-| Storage/ingestion    | Interfaces, central limits, URL request-shape validation, local S3Mock                                                | Signed S3 adapter and isolated ingestion pipeline in M3                     |
-| AI                   | Provider-neutral contract and deterministic fake                                                                      | Context manifests, live evaluated adapter, SSE and usage finalization in M4 |
-| Authentication       | Better Auth sessions, dedicated auth role, local test password flow, configurable Google OIDC and hashed magic links  | Production provider credentials and delivery contract checks before alpha   |
+| Area                 | Present through M2                                                                                                                                                                   | Planned milestone                                                           |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| Web/worker workspace | Runnable Next.js shell, authenticated Board/canvas routes and UI, health route, worker boot and pg-boss schema bootstrap                                                             | Ingestion and AI handlers in M3–M4                                          |
+| Tenant data boundary | Composite FKs, non-bypass roles, RLS transactions, idempotent personal workspace, scoped Board/canvas repositories and cross-tenant tests                                            | Extend the authorization matrix with each M3–M4 resource                    |
+| Canvas               | Project-owned React Flow adapter; all Phase 1 node kinds; grouping, connections, outline, undo/redo, soft-delete restore, revisioned autosave, and the deterministic 200/300 fixture | M3 ingestion states and M4 grounded chat within the existing node surface   |
+| Storage/ingestion    | Interfaces, central limits, URL request-shape validation, local S3Mock                                                                                                               | Signed S3 adapter and isolated ingestion pipeline in M3                     |
+| AI                   | Provider-neutral contract and deterministic fake                                                                                                                                     | Context manifests, live evaluated adapter, SSE and usage finalization in M4 |
+| Authentication       | Better Auth sessions, dedicated auth role, local test password flow, configurable Google OIDC and hashed magic links                                                                 | Production provider credentials and delivery contract checks before alpha   |
 
 ## Repository topology
 
@@ -134,10 +134,12 @@ Only `packages/ui` maps domain `CanvasNode`/`CanvasEdge` to React Flow types. St
 custom node types and fine-grained selectors prevent an ingestion or chat stream from
 rerendering unaffected nodes.
 
-Autosave sends a bounded ordered operation batch after 750 ms. The board revision orders
-canonical snapshots; per-record revisions decide true conflicts. Mutation receipts make
-acknowledged retries idempotent. A failed/conflicted save retains local operations and
-keeps the UI visibly dirty.
+Autosave sends a bounded ordered operation batch after 750 ms. Each operation carries the
+target record's expected revision; the board revision orders canonical snapshots but does
+not reject unrelated edits from another tab. Mutation receipts make acknowledged retries
+idempotent. A failed/conflicted save retains local state, presents explicit reload or
+reapply recovery, and keeps the UI visibly dirty. Navigation warns while edits remain
+unacknowledged.
 
 ## Local and production infrastructure
 
@@ -174,7 +176,11 @@ unusual quota spend.
 - M1 evidence: concurrent idempotent workspace/Board creation, auth-role separation,
   Board lifecycle repositories, forged-scope/cross-tenant 404s, session invalidation,
   and the full UI journey on Chromium, Firefox, and WebKit.
-- M2–M4 add the remaining repository/API/worker authorization matrix, queue transaction /
+- M2 evidence: every node payload kind, grouping and context-edge persistence, exact
+  mutation retry receipts, unrelated-record stale-base acceptance, same-record 409s,
+  soft-delete restoration, canvas cross-tenant 404s, keyboard undo, accessible context
+  connections, refresh persistence, and the 200/300 performance fixture.
+- M3–M4 add the remaining repository/API/worker authorization matrix, queue transaction /
   rollback / lease / retry tests, S3 lifecycle, SSRF/XSS/prompt-injection corpora,
   autosave conflicts and the grounded stream/cancel/refetch journey.
 

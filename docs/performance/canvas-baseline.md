@@ -1,7 +1,7 @@
 # Canvas performance baseline
 
-Status: short and 15-minute post-GC baselines pass on the documented M4 development
-host; lower-spec reference-device approval remains pending.
+Status: M0 and M2 short/15-minute post-GC baselines pass on the documented M4
+development host; lower-spec reference-device approval remains pending.
 
 ## Canonical fixture
 
@@ -71,6 +71,7 @@ no unrelated foreground workload. Record exact values for every approved baselin
 | Commit or working-tree fingerprint | Pre-initial-commit M0 tree; lock `992e2ea99022`; fixture `d1697d4dcbf8`; canvas adapter `066e9a862565`; harness `a603259e86dc` (SHA-256 prefixes; full values are in the accepted result) |
 | Short run timestamp                | 2026-08-01 15:55:58 +08:00                                                                                                                                                                |
 | Accepted soak timestamp            | 2026-08-01 16:34:57 +08:00                                                                                                                                                                |
+| M2 soak timestamp                  | 2026-08-01 21:12:53 +08:00                                                                                                                                                                |
 
 ## Provisional gates to calibrate
 
@@ -86,6 +87,12 @@ The accepted result is
 [`runs/m0-2026-08-01-m4-soak-v2.json`](runs/m0-2026-08-01-m4-soak-v2.json). It proves the
 implementation and measurement method on this host, not the lower M1-class/8-GiB
 reference profile: this machine is materially faster and has more RAM.
+
+The M2 rerun against the editable adapter and versioned payload model is recorded at
+[`runs/m2-2026-08-01-m4-soak.json`](runs/m2-2026-08-01-m4-soak.json). It sampled 53,994
+frames over 15 minutes with 17.3 ms p95 frame time, 99.99% at or below 20 ms, 15.3 ms
+pointer-to-next-paint p95, a 73 ms longest task, and 5.97% post-GC heap growth from minute
+5 to minute 15. All calibrated M2 gates pass on the documented host.
 `latest.local.json` is ignored, overwriteable diagnostic output; accepted evidence is
 copied into `runs/` with its machine and source fingerprint.
 
@@ -103,5 +110,6 @@ harness held the workload active through the final sample, the repeat measured 6
   the minute 5 and minute 15 heap samples and proves the controller remains active
   through the final read; the in-page memory value remains diagnostic.
 - Native Safari and Edge smoke remain required even when Playwright WebKit/Chromium pass.
-- M2 adds real autosave, progress events, text streaming, selection/drag, keyboard path,
-  render-count instrumentation, and a stable dirty-board soak.
+- The M2 editor's autosave/conflict path is covered separately by database and
+  three-browser tests; this deterministic soak isolates the shared canvas adapter's
+  drag/pan, progress, streaming, frame-time, and retained-heap behavior.

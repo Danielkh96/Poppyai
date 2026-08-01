@@ -164,6 +164,7 @@ export const nodes = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     workspaceId: uuid("workspace_id").notNull(),
     boardId: uuid("board_id").notNull(),
+    parentNodeId: uuid("parent_node_id"),
     kind: canvasNodeKind("kind").notNull(),
     x: real("x").notNull(),
     y: real("y").notNull(),
@@ -186,6 +187,11 @@ export const nodes = pgTable(
       columns: [table.workspaceId, table.boardId],
       foreignColumns: [boards.workspaceId, boards.id],
       name: "node_board_scope_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.workspaceId, table.boardId, table.parentNodeId],
+      foreignColumns: [table.workspaceId, table.boardId, table.id],
+      name: "node_parent_scope_fk"
     }).onDelete("cascade"),
     check("node_revision_nonnegative", sql`${table.revision} >= 0`),
     check(

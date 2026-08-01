@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start --hostname 127.0.0.1",
     "typecheck": "tsc --noEmit",
-    "test:e2e": "playwright test e2e/auth.setup.ts e2e/auth.teardown.ts e2e/smoke.spec.ts e2e/board-lifecycle.spec.ts",
+    "test:e2e": "playwright test e2e/auth.setup.ts e2e/auth.teardown.ts e2e/smoke.spec.ts e2e/board-lifecycle.spec.ts e2e/persistent-canvas.spec.ts",
     "benchmark:canvas": "PLAYWRIGHT_PRODUCTION=1 WRITE_BENCHMARK_RESULT=1 playwright test e2e/canvas-benchmark.spec.ts --project=canvas-benchmark --reporter=line"
   },
   "dependencies": {

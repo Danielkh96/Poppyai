@@ -29,6 +29,13 @@
       "when": 1785575710648,
       "tag": "0003_robust_freak",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1785585858630,
+      "tag": "0004_chubby_alex_power",
+      "breakpoints": true
     }
   ]
 }

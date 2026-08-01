@@ -1,0 +1,47 @@
+{
+  "evidenceStatus": "accepted_on_documented_m4_development_host",
+  "measuredAt": "2026-08-01T13:12:53.060Z",
+  "host": {
+    "model": "MacBook Air Mac16,13",
+    "chip": "Apple M4, 10 cores",
+    "memoryGiB": 16,
+    "os": "macOS 26.5.2 (25F84)",
+    "node": "24.14.1",
+    "pnpm": "11.18.0"
+  },
+  "fingerprint": {
+    "pnpmLockSha256": "8a24754cda67c1b660ce9d28aec761bcfca2ad33ee65790d74dee36c2ff85e98",
+    "fixtureSha256": "a1fcc4fac27f6be36aba348bcd366f6fa1b893392f4fb1314cc99b8b7782d181",
+    "canvasAdapterSha256": "e82aa2989f1936ccbd1e6af8d0af7370f6915f1bf72ff8eee4cab4f087015263",
+    "harnessSha256": "a603259e86dc35db7476eb2246e8586b90bb43165e54d67c925640de80473079"
+  },
+  "browserName": "chromium",
+  "browserVersion": "151.0.7922.34",
+  "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.7922.34 Safari/537.36",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "visibleNodeCount": 63,
+  "result": {
+    "durationMs": 900024,
+    "nodeCount": 200,
+    "edgeCount": 300,
+    "sampledFrames": 53994,
+    "p95FrameTimeMs": 17.3,
+    "framesWithin20msPercent": 99.99,
+    "pointerToPaintP95Ms": 15.3,
+    "longestTaskMs": 73,
+    "stateUpdateCycles": 3545,
+    "heapStartBytes": 18200000,
+    "heapEndBytes": 18200000,
+    "heapGrowthPercent": 0
+  },
+  "soakHeap": {
+    "method": "CDP HeapProfiler.collectGarbage + Runtime.getHeapUsage",
+    "minuteFiveUsedBytes": 9850516,
+    "minuteFifteenUsedBytes": 10438368,
+    "growthPercent": 5.97,
+    "benchmarkActiveDuringFinalSample": true
+  }
+}

@@ -26,12 +26,14 @@ import {
   BackgroundVariant,
   Controls,
   Handle,
+  NodeResizer,
   Position,
   ReactFlow,
   ReactFlowProvider,
   useEdgesState,
   useNodesState,
   useReactFlow,
+  type Connection,
   type Edge,
   type Node,
   type NodeProps
@@ -41,6 +43,12 @@ import type { CanvasGraph, CanvasNode, CanvasNodeKind } from "@siftloom/shared";
 
 interface CanvasNodeData extends Record<string, unknown> {
   readonly node: CanvasNode;
+  readonly editable: boolean;
+  readonly onResizeEnd?: (
+    nodeId: string,
+    position: CanvasNode["position"],
+    size: CanvasNode["size"]
+  ) => void;
 }
 
 type FlowNode = Node<CanvasNodeData, "siftloom">;
@@ -78,6 +86,17 @@ export interface CanvasSurfaceProps {
   readonly graph: CanvasGraph;
   readonly ariaLabel: string;
   readonly benchmarkEnabled?: boolean;
+  readonly editable?: boolean;
+  readonly focusNodeId?: string | null;
+  readonly onConnect?: (sourceId: string, targetId: string) => void;
+  readonly onDeleteEdges?: (edgeIds: readonly string[]) => void;
+  readonly onDeleteNodes?: (nodeIds: readonly string[]) => void;
+  readonly onNodeGeometryChange?: (
+    nodeId: string,
+    position: CanvasNode["position"],
+    size: CanvasNode["size"]
+  ) => void;
+  readonly onSelectionChange?: (nodeIds: readonly string[]) => void;
 }
 
 const NODE_ICONS: Record<
@@ -95,38 +114,54 @@ const NODE_ICONS: Record<
 
 function NodeCardComponent({ data, selected }: NodeProps<FlowNode>) {
   const node = data.node;
+  const payload = node.payload;
   const Icon = NODE_ICONS[node.kind];
-  const isBusy = node.status === "processing" || node.status === "streaming";
+  const isBusy = payload.status === "processing" || payload.status === "streaming";
 
   return (
     <article
       className={`canvas-node canvas-node--${node.kind}${selected ? " is-selected" : ""}`}
-      aria-label={`${node.title}，${node.status}`}
+      aria-label={`${payload.title}，${payload.status}`}
     >
+      <NodeResizer
+        color="#1746d1"
+        isVisible={selected && data.editable}
+        minWidth={80}
+        minHeight={60}
+        maxWidth={4_000}
+        maxHeight={4_000}
+        onResizeEnd={(_event, parameters) =>
+          data.onResizeEnd?.(
+            node.id,
+            { x: parameters.x, y: parameters.y },
+            { width: parameters.width, height: parameters.height }
+          )
+        }
+      />
       <Handle type="target" position={Position.Left} className="canvas-handle" />
       <div className="canvas-node__header">
         <span className="canvas-node__icon" aria-hidden="true">
           <Icon size={15} strokeWidth={1.8} />
         </span>
         <span className="canvas-node__kind">{node.kind}</span>
-        <span className={`canvas-node__status canvas-node__status--${node.status}`}>
+        <span className={`canvas-node__status canvas-node__status--${payload.status}`}>
           {isBusy ? (
             <LoaderCircle size={12} className="spin" aria-hidden="true" />
           ) : (
             <CheckCircle2 size={12} aria-hidden="true" />
           )}
-          {node.status === "streaming"
+          {payload.status === "streaming"
             ? "生成中"
-            : node.status === "processing"
+            : payload.status === "processing"
               ? "处理中"
               : "已就绪"}
         </span>
       </div>
-      <h3>{node.title}</h3>
-      <p>{node.summary}</p>
-      {node.progress !== null ? (
-        <div className="canvas-node__progress" aria-label={`处理进度 ${node.progress}%`}>
-          <span style={{ width: `${node.progress}%` }} />
+      <h3>{payload.title}</h3>
+      <p>{payload.summary}</p>
+      {payload.progress !== null ? (
+        <div className="canvas-node__progress" aria-label={`处理进度 ${payload.progress}%`}>
+          <span style={{ width: `${payload.progress}%` }} />
         </div>
       ) : null}
       <footer>
@@ -141,16 +176,58 @@ function NodeCardComponent({ data, selected }: NodeProps<FlowNode>) {
 const NodeCard = memo(NodeCardComponent);
 const NODE_TYPES = { siftloom: NodeCard };
 
-function mapNodes(graph: CanvasGraph): FlowNode[] {
-  return graph.nodes.map((node) => ({
-    id: node.id,
-    type: "siftloom",
-    position: node.position,
-    width: node.size.width,
-    height: node.size.height,
-    data: { node },
-    style: { width: node.size.width, height: node.size.height }
-  }));
+function mapNodes(
+  graph: CanvasGraph,
+  editable = false,
+  onResizeEnd?: CanvasNodeData["onResizeEnd"]
+): FlowNode[] {
+  const nodesById = new Map(graph.nodes.map((node) => [node.id, node]));
+  return [...graph.nodes]
+    .sort((left, right) => Number(left.parentId !== null) - Number(right.parentId !== null))
+    .map((node) => {
+      const parent = node.parentId ? nodesById.get(node.parentId) : undefined;
+      const parentProperties = parent
+        ? { parentId: parent.id, extent: "parent" as const }
+        : {};
+      return {
+        id: node.id,
+        type: "siftloom",
+        position: parent
+          ? {
+              x: node.position.x - parent.position.x,
+              y: node.position.y - parent.position.y
+            }
+          : node.position,
+        width: node.size.width,
+        height: node.size.height,
+        ...parentProperties,
+        data: {
+          node,
+          editable,
+          ...(onResizeEnd
+            ? {
+                onResizeEnd: (
+                  nodeId: string,
+                  position: CanvasNode["position"],
+                  size: CanvasNode["size"]
+                ) =>
+                  onResizeEnd(
+                    nodeId,
+                    parent
+                      ? {
+                          x: parent.position.x + position.x,
+                          y: parent.position.y + position.y
+                        }
+                      : position,
+                    size
+                  )
+              }
+            : {})
+        },
+        style: { width: node.size.width, height: node.size.height },
+        zIndex: node.kind === "group" ? -1 : 0
+      };
+    });
 }
 
 function mapEdges(graph: CanvasGraph): FlowEdge[] {
@@ -191,18 +268,47 @@ function InnerCanvas({
   graph,
   ariaLabel,
   benchmarkEnabled = false,
+  editable = false,
+  focusNodeId,
+  onConnect,
+  onDeleteEdges,
+  onDeleteNodes,
+  onNodeGeometryChange,
+  onSelectionChange,
   initialNodes,
   initialEdges
 }: InnerCanvasProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<FlowNode>(initialNodes);
-  const [edges, , onEdgesChange] = useEdgesState<FlowEdge>(initialEdges);
-  const { getViewport, setViewport } = useReactFlow<FlowNode, FlowEdge>();
+  const [edges, setEdges, onEdgesChange] = useEdgesState<FlowEdge>(initialEdges);
+  const { getNode, getViewport, setCenter, setViewport } = useReactFlow<
+    FlowNode,
+    FlowEdge
+  >();
   const [latest, setLatest] = useState<CanvasBenchmarkResult | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const activeRef = useRef(false);
   const finalizeRequestedRef = useRef(false);
   const pointerSamplesRef = useRef<number[]>([]);
   const runningPromiseRef = useRef<Promise<CanvasBenchmarkResult> | null>(null);
+
+  useEffect(() => {
+    if (activeRef.current) return;
+    setNodes(initialNodes);
+    setEdges(initialEdges);
+  }, [initialEdges, initialNodes, setEdges, setNodes]);
+
+  useEffect(() => {
+    if (!focusNodeId) return;
+    const node = getNode(focusNodeId);
+    if (!node) return;
+    const width = node.measured?.width ?? node.width ?? 220;
+    const height = node.measured?.height ?? node.height ?? 140;
+    const absolute = node.data.node.position;
+    void setCenter(absolute.x + width / 2, absolute.y + height / 2, {
+      duration: 220,
+      zoom: Math.max(getViewport().zoom, 0.8)
+    });
+  }, [focusNodeId, getNode, getViewport, setCenter]);
 
   const finalize = useCallback(() => {
     finalizeRequestedRef.current = true;
@@ -255,26 +361,34 @@ function InnerCanvas({
             setNodes((currentNodes) =>
               currentNodes.map((flowNode) => {
                 const domainNode = flowNode.data.node;
-                if (domainNode.status === "processing") {
+                if (domainNode.payload.status === "processing") {
                   return {
                     ...flowNode,
                     data: {
+                      ...flowNode.data,
                       node: {
                         ...domainNode,
-                        progress: 5 + ((activityStep * 7) % 91)
+                        payload: {
+                          ...domainNode.payload,
+                          progress: 5 + ((activityStep * 7) % 91)
+                        }
                       }
                     }
                   };
                 }
-                if (domainNode.status === "streaming") {
+                if (domainNode.payload.status === "streaming") {
                   return {
                     ...flowNode,
                     data: {
+                      ...flowNode.data,
                       node: {
                         ...domainNode,
-                        summary: `正在生成已授权来源的可追溯回答${"·".repeat(
-                          (activityStep % 3) + 1
-                        )}`
+                        payload: {
+                          ...domainNode.payload,
+                          summary: `正在生成已授权来源的可追溯回答${"·".repeat(
+                            (activityStep % 3) + 1
+                          )}`
+                        }
                       }
                     }
                   };
@@ -371,6 +485,52 @@ function InnerCanvas({
     });
   }, []);
 
+  const handleNodeDragStop = useCallback(
+    (_event: MouseEvent | TouchEvent, flowNode: FlowNode) => {
+      if (!editable || !onNodeGeometryChange) return;
+      const domainNode = flowNode.data.node;
+      const parent = domainNode.parentId
+        ? graph.nodes.find((node) => node.id === domainNode.parentId)
+        : undefined;
+      const position = parent
+        ? {
+            x: parent.position.x + flowNode.position.x,
+            y: parent.position.y + flowNode.position.y
+          }
+        : flowNode.position;
+      onNodeGeometryChange(flowNode.id, position, {
+        width: flowNode.measured?.width ?? flowNode.width ?? domainNode.size.width,
+        height: flowNode.measured?.height ?? flowNode.height ?? domainNode.size.height
+      });
+    },
+    [editable, graph.nodes, onNodeGeometryChange]
+  );
+
+  const handleConnect = useCallback(
+    (connection: Connection) => {
+      if (connection.source && connection.target) {
+        onConnect?.(connection.source, connection.target);
+      }
+    },
+    [onConnect]
+  );
+
+  const handleNodesDelete = useCallback(
+    (deleted: FlowNode[]) => onDeleteNodes?.(deleted.map((node) => node.id)),
+    [onDeleteNodes]
+  );
+
+  const handleEdgesDelete = useCallback(
+    (deleted: FlowEdge[]) => onDeleteEdges?.(deleted.map((edge) => edge.id)),
+    [onDeleteEdges]
+  );
+
+  const handleSelectionChange = useCallback(
+    ({ nodes: selected }: { nodes: FlowNode[]; edges: FlowEdge[] }) =>
+      onSelectionChange?.(selected.map((node) => node.id)),
+    [onSelectionChange]
+  );
+
   return (
     <div
       className="canvas-shell"
@@ -384,6 +544,16 @@ function InnerCanvas({
         nodeTypes={NODE_TYPES}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        onNodeDragStop={handleNodeDragStop}
+        onConnect={handleConnect}
+        onNodesDelete={handleNodesDelete}
+        onEdgesDelete={handleEdgesDelete}
+        onSelectionChange={handleSelectionChange}
+        nodesDraggable={editable || benchmarkEnabled}
+        nodesConnectable={editable}
+        nodesFocusable
+        edgesFocusable
+        deleteKeyCode={editable ? ["Backspace", "Delete"] : null}
         minZoom={0.2}
         maxZoom={1.8}
         defaultViewport={{ x: 34, y: 38, zoom: 0.55 }}
@@ -429,7 +599,10 @@ function InnerCanvas({
 }
 
 export function CanvasSurface(props: CanvasSurfaceProps) {
-  const initialNodes = useMemo(() => mapNodes(props.graph), [props.graph]);
+  const initialNodes = useMemo(
+    () => mapNodes(props.graph, props.editable, props.onNodeGeometryChange),
+    [props.editable, props.graph, props.onNodeGeometryChange]
+  );
   const initialEdges = useMemo(() => mapEdges(props.graph), [props.graph]);
 
   return (
