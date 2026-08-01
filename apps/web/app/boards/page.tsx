@@ -1,4 +1,5 @@
 import { listBoards } from "@siftloom/db";
+import { Command, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -24,13 +25,21 @@ export default async function BoardsPage() {
       <nav className="workspace-nav" aria-label="工作区导航">
         <Link href="/" className="wordmark">
           <span className="brand-mark" aria-hidden="true">
-            S
+            <Command size={17} />
           </span>
           <span>Siftloom</span>
         </Link>
+        <span className="workspace-nav__context">
+          <ShieldCheck size={14} /> 私有工作区
+        </span>
         <span className="workspace-owner">
-          <strong>{context.user.name}</strong>
-          <small>{context.user.email}</small>
+          <span className="workspace-owner__avatar" aria-hidden="true">
+            {context.user.name.slice(0, 1).toUpperCase()}
+          </span>
+          <span>
+            <strong>{context.user.name}</strong>
+            <small>{context.user.email}</small>
+          </span>
         </span>
         <SignOutButton />
       </nav>

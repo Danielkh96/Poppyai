@@ -124,7 +124,7 @@ function NodeCardComponent({ data, selected }: NodeProps<FlowNode>) {
       aria-label={`${payload.title}，${payload.status}`}
     >
       <NodeResizer
-        color="#1746d1"
+        color="#6558d9"
         isVisible={selected && data.editable}
         minWidth={80}
         minHeight={60}
@@ -561,7 +561,7 @@ function InnerCanvas({
         elevateNodesOnSelect
         proOptions={{ hideAttribution: false }}
       >
-        <Background variant={BackgroundVariant.Dots} gap={24} size={1.2} color="#cbc5b8" />
+        <Background variant={BackgroundVariant.Dots} gap={24} size={1.2} color="#d9dbe5" />
         <Controls position="bottom-right" showInteractive={false} />
       </ReactFlow>
 

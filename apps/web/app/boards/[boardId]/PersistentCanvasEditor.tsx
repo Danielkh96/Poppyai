@@ -267,7 +267,7 @@ export function PersistentCanvasEditor({
         kind,
         parentId: null,
         position: {
-          x: 80 + ((index - 1) % 4) * 270,
+          x: 520 + ((index - 1) % 4) * 270,
           y: 80 + Math.floor((index - 1) / 4) * 190
         },
         size: kind === "group" ? { width: 520, height: 320 } : { width: 230, height: 145 },
@@ -776,6 +776,7 @@ export function PersistentCanvasEditor({
               key={kind}
               type="button"
               onClick={() => addNode(kind)}
+              aria-label={KIND_LABELS[kind]}
               title={`添加${KIND_LABELS[kind]}`}
             >
               <Icon size={15} />
@@ -784,16 +785,27 @@ export function PersistentCanvasEditor({
           ))}
         </div>
         <div className="m2-toolbar__actions">
-          <button type="button" onClick={groupSelection} title="组合所选节点">
-            <FolderPlus size={15} /> 组合
+          <button
+            type="button"
+            onClick={groupSelection}
+            aria-label="组合"
+            title="组合所选节点"
+          >
+            <FolderPlus size={15} /> <span>组合</span>
           </button>
-          <button type="button" onClick={ungroupSelection} title="取消所选分组">
-            <PanelRightClose size={15} /> 解组
+          <button
+            type="button"
+            onClick={ungroupSelection}
+            aria-label="解组"
+            title="取消所选分组"
+          >
+            <PanelRightClose size={15} /> <span>解组</span>
           </button>
           <button
             type="button"
             onClick={undo}
             disabled={past.length === 0}
+            suppressHydrationWarning
             title="撤销 (⌘Z)"
           >
             <Undo2 size={15} />
@@ -802,6 +814,7 @@ export function PersistentCanvasEditor({
             type="button"
             onClick={redo}
             disabled={future.length === 0}
+            suppressHydrationWarning
             title="重做 (⇧⌘Z)"
           >
             <Redo2 size={15} />

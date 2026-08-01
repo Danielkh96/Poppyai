@@ -1,5 +1,5 @@
 import { BoardNotFoundError, getBoardSnapshot, getCanvasSnapshot } from "@siftloom/db";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Command } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -43,13 +43,16 @@ export default async function BoardPage({
           <Link href="/boards" className="icon-button" aria-label="返回 Boards">
             <ArrowLeft size={16} />
           </Link>
+          <span className="m2-brand-mark" aria-hidden="true">
+            <Command size={15} />
+          </span>
           <div>
-            <span className="eyebrow">Persistent canvas · M2</span>
+            <span className="eyebrow">Siftloom canvas</span>
             <h1>{board.name}</h1>
           </div>
         </div>
         <span className="m2-board-badge">
-          <Sparkles size={13} /> 私有工作区
+          <CheckCircle2 size={13} /> 自动保存已开启
         </span>
       </header>
       <PersistentCanvasEditor

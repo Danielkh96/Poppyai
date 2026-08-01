@@ -3,11 +3,18 @@
 import {
   Archive,
   ArrowRight,
-  LayoutGrid,
+  Clock3,
+  FileSearch,
+  FolderOpen,
+  LayoutDashboard,
+  Layers3,
   LoaderCircle,
+  MessageSquareText,
   Pencil,
+  Play,
   Plus,
-  RotateCcw
+  RotateCcw,
+  Sparkles
 } from "lucide-react";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
@@ -137,56 +144,65 @@ export function BoardDashboard({ initialActive, initialArchived }: BoardDashboar
   }
 
   return (
-    <>
-      <section className="board-hero">
-        <div>
-          <span className="eyebrow">Workspace index</span>
-          <h1>你的 Boards</h1>
-          <p>每张 Board 都是一个独立的研究与创作空间。</p>
-        </div>
+    <div className="board-app-shell">
+      <aside className="board-sidebar" aria-label="Board 导航">
         <form className="create-board" onSubmit={create}>
           <label htmlFor="new-board-name">新 Board 名称</label>
-          <div>
-            <input
-              id="new-board-name"
-              maxLength={120}
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="留空将使用默认名称"
-            />
-            <button
-              type="submit"
-              disabled={!interactive || pending !== null}
-              suppressHydrationWarning
-            >
-              {pending === "create" ? (
-                <LoaderCircle className="spin" size={17} />
-              ) : (
-                <Plus size={17} />
-              )}
-              创建
-            </button>
-          </div>
+          <input
+            id="new-board-name"
+            maxLength={120}
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            placeholder="命名你的新 Board"
+          />
+          <button
+            type="submit"
+            disabled={!interactive || pending !== null}
+            suppressHydrationWarning
+          >
+            {pending === "create" ? (
+              <LoaderCircle className="spin" size={17} />
+            ) : (
+              <Plus size={17} />
+            )}
+            创建
+          </button>
         </form>
-      </section>
 
-      <section className="board-index" aria-labelledby="board-list-title">
-        <div className="board-index__head">
-          <div className="board-tabs" role="tablist" aria-label="Board 分类">
-            <button
-              role="tab"
-              aria-selected={view === "active"}
-              onClick={() => setView("active")}
-            >
-              使用中 <span>{active.length}</span>
-            </button>
-            <button
-              role="tab"
-              aria-selected={view === "archived"}
-              onClick={() => setView("archived")}
-            >
-              已归档 <span>{archived.length}</span>
-            </button>
+        <nav className="board-tabs" role="tablist" aria-label="Board 分类">
+          <button
+            role="tab"
+            aria-selected={view === "active"}
+            onClick={() => setView("active")}
+          >
+            <LayoutDashboard size={17} />
+            使用中 <span>{active.length}</span>
+          </button>
+          <button
+            role="tab"
+            aria-selected={view === "archived"}
+            onClick={() => setView("archived")}
+          >
+            <Archive size={17} />
+            已归档 <span>{archived.length}</span>
+          </button>
+        </nav>
+
+        <div className="board-sidebar__tip">
+          <span>
+            <Sparkles size={14} /> 工作流提示
+          </span>
+          <strong>先连接来源，再交给 AI。</strong>
+          <p>这样生成的每个结论都能回到原始节点。</p>
+        </div>
+      </aside>
+
+      <div className="board-content">
+        <section className="board-hero">
+          <div>
+            <span className="eyebrow">Visual research workspace</span>
+            <h1>你的 Boards</h1>
+            <p>整理素材、连接线索，并从明确来源生成内容。</p>
           </div>
           <button
             className="quiet-button"
@@ -195,87 +211,145 @@ export function BoardDashboard({ initialActive, initialArchived }: BoardDashboar
           >
             <RotateCcw size={14} /> 刷新
           </button>
-        </div>
+        </section>
 
-        {error ? (
-          <div className="inline-error" role="alert">
-            <p>{error}</p>
-            <button type="button" onClick={() => void refresh()}>
-              重试
-            </button>
+        <section className="board-guide" aria-labelledby="board-guide-title">
+          <div className="board-guide__heading">
+            <div>
+              <span className="eyebrow">Quick start</span>
+              <h2 id="board-guide-title">用三步建立可追溯的创作空间</h2>
+            </div>
+            <span className="board-guide__play" aria-hidden="true">
+              <Play size={13} fill="currentColor" /> 2 分钟导览
+            </span>
           </div>
-        ) : null}
+          <div className="board-guide__cards">
+            <article className="guide-card guide-card--sources">
+              <span>
+                <FileSearch size={19} />
+              </span>
+              <small>01 · 收集</small>
+              <strong>把来源放进画布</strong>
+              <p>文本、网页与文件成为独立节点。</p>
+            </article>
+            <article className="guide-card guide-card--structure">
+              <span>
+                <Layers3 size={19} />
+              </span>
+              <small>02 · 组织</small>
+              <strong>分组并连接线索</strong>
+              <p>用空间关系看见素材之间的脉络。</p>
+            </article>
+            <article className="guide-card guide-card--chat">
+              <span>
+                <MessageSquareText size={19} />
+              </span>
+              <small>03 · 生成</small>
+              <strong>让 AI 只使用所选来源</strong>
+              <p>保留答案与贡献节点之间的连接。</p>
+            </article>
+          </div>
+        </section>
 
-        {pending === "refresh" ? (
-          <div className="board-state" role="status">
-            <LoaderCircle className="spin" /> 正在加载 Boards…
+        <section className="board-index" aria-labelledby="board-list-title">
+          <div className="board-index__head">
+            <div>
+              <h2 id="board-list-title">
+                {view === "active" ? "全部 Boards" : "已归档 Boards"}
+              </h2>
+              <p>{boards.length} 个工作空间</p>
+            </div>
+            <span className="board-index__sort">
+              <Clock3 size={13} /> 最近更新
+            </span>
           </div>
-        ) : boards.length === 0 ? (
-          <div className="board-empty">
-            <LayoutGrid size={28} />
-            <h2 id="board-list-title">
-              {view === "active" ? "从第一张 Board 开始" : "暂无归档内容"}
-            </h2>
-            <p>
-              {view === "active"
-                ? "输入名称并创建，或直接使用默认名称。"
-                : "归档的 Board 会出现在这里，并可随时恢复。"}
-            </p>
-          </div>
-        ) : (
-          <div className="board-grid-list">
-            {boards.map((board, index) => (
-              <article className="board-card" key={board.id}>
-                <span className="board-card__number">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <div className="board-card__body">
-                  <small>{view === "active" ? "ACTIVE BOARD" : "ARCHIVED"}</small>
-                  <h2>{board.name}</h2>
-                  <p>
-                    更新于{" "}
+
+          {error ? (
+            <div className="inline-error" role="alert">
+              <p>{error}</p>
+              <button type="button" onClick={() => void refresh()}>
+                重试
+              </button>
+            </div>
+          ) : null}
+
+          {pending === "refresh" ? (
+            <div className="board-state" role="status">
+              <LoaderCircle className="spin" /> 正在加载 Boards…
+            </div>
+          ) : boards.length === 0 ? (
+            <div className="board-empty">
+              <FolderOpen size={28} />
+              <h3>{view === "active" ? "从第一张 Board 开始" : "暂无归档内容"}</h3>
+              <p>
+                {view === "active"
+                  ? "在左侧命名并创建一个新的研究空间。"
+                  : "归档的 Board 会出现在这里，并可随时恢复。"}
+              </p>
+            </div>
+          ) : (
+            <div className="board-grid-list">
+              <div className="board-list-head" aria-hidden="true">
+                <span>名称</span>
+                <span>最近更新</span>
+                <span>状态</span>
+                <span>操作</span>
+              </div>
+              {boards.map((board) => (
+                <article className="board-card" key={board.id}>
+                  <span className="board-card__icon" aria-hidden="true">
+                    <Layers3 size={16} />
+                  </span>
+                  <div className="board-card__body">
+                    <h2>{board.name}</h2>
+                    <small>视觉研究空间</small>
+                  </div>
+                  <p className="board-card__updated">
                     {new Intl.DateTimeFormat("zh-CN", {
                       dateStyle: "medium",
                       timeStyle: "short"
                     }).format(new Date(board.updatedAt))}
                   </p>
-                </div>
-                <div className="board-card__actions">
-                  {view === "active" ? (
-                    <>
-                      <Link href={`/boards/${board.id}`}>
-                        打开 <ArrowRight size={15} />
-                      </Link>
+                  <span className={`board-card__status board-card__status--${view}`}>
+                    {view === "active" ? "使用中" : "已归档"}
+                  </span>
+                  <div className="board-card__actions">
+                    {view === "active" ? (
+                      <>
+                        <Link href={`/boards/${board.id}`}>
+                          打开 <ArrowRight size={15} />
+                        </Link>
+                        <button
+                          disabled={pending === board.id}
+                          onClick={() => void mutate(board, "rename")}
+                          aria-label={`重命名 ${board.name}`}
+                        >
+                          <Pencil size={15} />
+                        </button>
+                        <button
+                          disabled={pending === board.id}
+                          onClick={() => void mutate(board, "archive")}
+                          aria-label={`归档 ${board.name}`}
+                        >
+                          <Archive size={15} />
+                        </button>
+                      </>
+                    ) : (
                       <button
+                        className="restore-button"
                         disabled={pending === board.id}
-                        onClick={() => void mutate(board, "rename")}
-                        aria-label={`重命名 ${board.name}`}
+                        onClick={() => void mutate(board, "restore")}
                       >
-                        <Pencil size={15} />
+                        <RotateCcw size={15} /> 恢复
                       </button>
-                      <button
-                        disabled={pending === board.id}
-                        onClick={() => void mutate(board, "archive")}
-                        aria-label={`归档 ${board.name}`}
-                      >
-                        <Archive size={15} />
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      className="restore-button"
-                      disabled={pending === board.id}
-                      onClick={() => void mutate(board, "restore")}
-                    >
-                      <RotateCcw size={15} /> 恢复
-                    </button>
-                  )}
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
-    </>
+                    )}
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
   );
 }
