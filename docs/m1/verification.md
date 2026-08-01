@@ -16,7 +16,9 @@ Date: 2026-08-01
 - Reviewed migrations applied twice against PostgreSQL 17.9.
 - Unit tests: 5 files, 15 tests.
 - Database integration tests: 3 files, 9 tests.
-- Browser tests: 12 tests across Chromium, Firefox, and WebKit.
+- Browser tests: 14 tests across Chromium, Firefox, and WebKit. Two setup-time tenant
+  fixtures are reused as session state so the suite exercises, rather than disables or
+  overwhelms, Better Auth's sign-up rate limit.
 - ESLint, strict TypeScript checks, formatting checks, dependency audit, and the production build are release gates in CI.
 
 ## Authentication delivery
