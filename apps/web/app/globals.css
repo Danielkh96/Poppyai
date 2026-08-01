@@ -1277,6 +1277,72 @@ button:disabled {
   resize: vertical;
 }
 
+.m3-source-control,
+.m3-ingestion {
+  display: grid;
+  gap: 8px;
+  border: 1px solid #d8d1c5;
+  border-radius: 9px;
+  background: #f8f5ee;
+  padding: 10px;
+}
+
+.m3-source-control small,
+.m3-ingestion p {
+  margin: 0;
+  color: #6a6d66;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.m3-source-control button,
+.m3-ingestion button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid #b9b2a7;
+  border-radius: 7px;
+  background: #fffdf8;
+  padding: 8px;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 10px;
+}
+
+.m3-source-control button:disabled,
+.m3-ingestion button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.m3-ingestion > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+}
+
+.m3-ingestion__progress {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #ded8cd;
+}
+
+.m3-ingestion__progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #6e7762;
+  transition: width 180ms ease;
+}
+
+.m3-ingestion--failed {
+  border-color: #dfbcb3;
+  background: #fbefeb;
+}
+
 .m2-delete-button {
   display: inline-flex;
   align-items: center;

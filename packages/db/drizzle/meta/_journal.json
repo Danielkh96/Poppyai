@@ -36,6 +36,20 @@
       "when": 1785585858630,
       "tag": "0004_chubby_alex_power",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1785592784091,
+      "tag": "0005_demonic_runaways",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1785595206295,
+      "tag": "0006_ingestion_cleanup",
+      "breakpoints": true
     }
   ]
 }

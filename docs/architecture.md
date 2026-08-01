@@ -22,19 +22,19 @@ flowchart LR
     W -->|"SSE deltas; canonical refetch"| B
 ```
 
-## M2 implementation status
+## M3 implementation status
 
 This document describes the approved target architecture. Acceptance of an ADR is not a
 claim that its product path is already implemented.
 
-| Area                 | Present through M2                                                                                                                                                                   | Planned milestone                                                           |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
-| Web/worker workspace | Runnable Next.js shell, authenticated Board/canvas routes and UI, health route, worker boot and pg-boss schema bootstrap                                                             | Ingestion and AI handlers in M3–M4                                          |
-| Tenant data boundary | Composite FKs, non-bypass roles, RLS transactions, idempotent personal workspace, scoped Board/canvas repositories and cross-tenant tests                                            | Extend the authorization matrix with each M3–M4 resource                    |
-| Canvas               | Project-owned React Flow adapter; all Phase 1 node kinds; grouping, connections, outline, undo/redo, soft-delete restore, revisioned autosave, and the deterministic 200/300 fixture | M3 ingestion states and M4 grounded chat within the existing node surface   |
-| Storage/ingestion    | Interfaces, central limits, URL request-shape validation, local S3Mock                                                                                                               | Signed S3 adapter and isolated ingestion pipeline in M3                     |
-| AI                   | Provider-neutral contract and deterministic fake                                                                                                                                     | Context manifests, live evaluated adapter, SSE and usage finalization in M4 |
-| Authentication       | Better Auth sessions, dedicated auth role, local test password flow, configurable Google OIDC and hashed magic links                                                                 | Production provider credentials and delivery contract checks before alpha   |
+| Area                 | Present through M3                                                                                                                                                                                                                                 | Planned milestone                                                             |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Web/worker workspace | Runnable Next.js shell, authenticated Board/canvas/ingestion routes, signed-upload lifecycle, canonical polling UI, pg-boss ingestion worker, scheduled orphan cleanup, bounded retry, and structured privacy-safe events                          | Grounded AI handlers in M4                                                    |
+| Tenant data boundary | Composite FKs, non-bypass roles, forced RLS, tenant transactions, scoped Board/canvas/asset/job/attempt/artifact repositories, worker reauthorization functions, exact object-key checks, and cross-tenant integration tests                       | Extend the authorization matrix with M4 chat and usage resources              |
+| Canvas               | Project-owned React Flow adapter; all Phase 1 node kinds; grouping, connections, outline, undo/redo, soft-delete restore, revisioned autosave, deterministic 200/300 fixture, and projected ingestion progress/warning/failure states              | M4 grounded chat within the existing node surface                             |
+| Storage/ingestion    | S3 adapter and S3Mock path; PDF/TXT extraction; HTTPS webpage fetch with DNS/redirect revalidation and size/time bounds; official YouTube Data API public-metadata adapter; versioned artifacts, ordered segments, provenance, quotas, and cleanup | Real-S3 contract suite and production `YOUTUBE_API_KEY` before external alpha |
+| AI                   | Provider-neutral contract and deterministic fake                                                                                                                                                                                                   | Context manifests, live evaluated adapter, SSE and usage finalization in M4   |
+| Authentication       | Better Auth sessions, dedicated auth role, local test password flow, configurable Google OIDC and hashed magic links                                                                                                                               | Production provider credentials and delivery contract checks before alpha     |
 
 ## Repository topology
 
@@ -180,9 +180,16 @@ unusual quota spend.
   mutation retry receipts, unrelated-record stale-base acceptance, same-record 409s,
   soft-delete restoration, canvas cross-tenant 404s, keyboard undo, accessible context
   connections, refresh persistence, and the 200/300 performance fixture.
-- M3–M4 add the remaining repository/API/worker authorization matrix, queue transaction /
-  rollback / lease / retry tests, S3 lifecycle, SSRF/XSS/prompt-injection corpora,
-  autosave conflicts and the grounded stream/cancel/refetch journey.
+- M3 evidence: browser-tested signed TXT upload through S3Mock and durable worker
+  completion/refetch; public webpage extraction; two-tenant repository and worker
+  reauthorization; logical job/attempt separation; stale-lease replacement; bounded
+  cleanup; duplicate submission rejection; checksum/provenance extraction; and literal
+  IPv4/IPv6 SSRF classification. The real-S3 contract matrix and broader malformed-file,
+  redirect/rebinding, timeout, and parser fuzz corpus remain external-alpha hardening
+  gates rather than reasons to weaken the implemented boundary.
+- M4 adds the chat/usage repository and worker authorization matrix, prompt-injection
+  corpus, grounded stream/cancel/refetch journey, immutable source snapshots, and
+  paid-operation reconciliation evidence.
 
 ## Sources behind current technical choices
 

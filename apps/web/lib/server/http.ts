@@ -3,7 +3,12 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
-import { BoardNotFoundError } from "@siftloom/db";
+import {
+  BoardNotFoundError,
+  IngestionLimitError,
+  IngestionNotFoundError,
+  IngestionStateError
+} from "@siftloom/db";
 
 export function jsonError(
   status: number,
@@ -33,6 +38,28 @@ export function boardRouteError(error: unknown) {
     errorName: error instanceof Error ? error.name : "UnknownError"
   });
   return jsonError(500, "INTERNAL_ERROR", "操作失败，请稍后重试。");
+}
+
+export function ingestionRouteError(error: unknown) {
+  if (error instanceof BoardNotFoundError || error instanceof IngestionNotFoundError) {
+    return jsonError(404, "INGESTION_NOT_FOUND", "找不到该来源处理记录。");
+  }
+  if (error instanceof IngestionStateError) {
+    return jsonError(409, error.code, error.message);
+  }
+  if (error instanceof IngestionLimitError) {
+    return jsonError(error.httpStatus, error.code, error.message);
+  }
+  if (
+    error instanceof SyntaxError ||
+    (error instanceof Error && error.name === "ZodError")
+  ) {
+    return invalidRequest(error);
+  }
+  console.error("Ingestion request failed", {
+    errorName: error instanceof Error ? error.name : "UnknownError"
+  });
+  return jsonError(500, "INTERNAL_ERROR", "来源处理操作失败，请稍后重试。");
 }
 
 export function hasTrustedBrowserOrigin(request: Request): boolean {

@@ -1,0 +1,3 @@
+Siftloom M3 ingestion acceptance sample.
+
+The durable worker extracts this UTF-8 text into provenance-bearing segments. This fixture contains no personal or confidential data.

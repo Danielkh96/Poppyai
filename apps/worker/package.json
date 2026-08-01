@@ -12,6 +12,7 @@
   "dependencies": {
     "@siftloom/db": "workspace:*",
     "@siftloom/ingestion": "workspace:*",
+    "@siftloom/shared": "workspace:*",
     "pg-boss": "12.26.4",
     "zod": "4.4.3"
   }

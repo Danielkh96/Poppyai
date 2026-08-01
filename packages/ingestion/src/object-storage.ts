@@ -3,6 +3,7 @@ export interface SignedObjectRequest {
   readonly objectKey: string;
   readonly contentType: string;
   readonly contentLength: number;
+  readonly checksumSha256: string;
   readonly expiresInSeconds: number;
 }
 
@@ -21,5 +22,12 @@ export interface ObjectStorage {
     expiresInSeconds: number
   ): Promise<URL>;
   head(workspaceId: string, objectKey: string): Promise<StoredObjectMetadata | null>;
+  get(workspaceId: string, objectKey: string): Promise<Uint8Array>;
+  getRange(
+    workspaceId: string,
+    objectKey: string,
+    start: number,
+    endInclusive: number
+  ): Promise<Uint8Array>;
   delete(workspaceId: string, objectKey: string): Promise<void>;
 }

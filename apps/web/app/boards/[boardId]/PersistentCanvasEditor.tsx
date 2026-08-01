@@ -4,6 +4,7 @@ import {
   canvasGraphSchema,
   canvasSaveResultSchema,
   canvasSnapshotSchema,
+  ingestionStatusListSchema,
   PHASE_1_LIMITS,
   type CanvasEdge,
   type CanvasGraph,
@@ -11,7 +12,8 @@ import {
   type CanvasNode,
   type CanvasNodeKind,
   type CanvasNodePayload,
-  type CanvasSnapshot
+  type CanvasSnapshot,
+  type IngestionStatus
 } from "@siftloom/shared";
 import { CanvasSurface } from "@siftloom/ui";
 import {
@@ -32,11 +34,13 @@ import {
   Trash2,
   Type,
   Undo2,
+  Upload,
   Video
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type SaveState = "saved" | "dirty" | "saving" | "failed" | "conflict";
+type SourceActionState = "idle" | "uploading" | "submitting" | "retrying";
 
 interface PersistentCanvasEditorProps {
   readonly boardId: string;
@@ -205,6 +209,22 @@ function isTypingTarget(target: EventTarget | null): boolean {
   );
 }
 
+async function sha256Hex(file: File): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+  return [...new Uint8Array(digest)]
+    .map((value) => value.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function apiErrorMessage(response: Response): Promise<string> {
+  try {
+    const body = (await response.json()) as { error?: { message?: string } };
+    return body.error?.message ?? "来源处理请求失败。";
+  } catch {
+    return "来源处理请求失败。";
+  }
+}
+
 export function PersistentCanvasEditor({
   boardId,
   initialSnapshot
@@ -220,6 +240,12 @@ export function PersistentCanvasEditor({
   const [savePulse, setSavePulse] = useState(0);
   const [displayRevision, setDisplayRevision] = useState(initialSnapshot.boardRevision);
   const [latestConflictRevision, setLatestConflictRevision] = useState<number | null>(null);
+  const [ingestions, setIngestions] = useState<readonly IngestionStatus[]>([]);
+  const [sourceFile, setSourceFile] = useState<{
+    readonly nodeId: string;
+    readonly file: File;
+  } | null>(null);
+  const [sourceActionState, setSourceActionState] = useState<SourceActionState>("idle");
 
   const graphRef = useRef(graph);
   const acknowledgedGraphRef = useRef(initialSnapshot.graph);
@@ -234,6 +260,32 @@ export function PersistentCanvasEditor({
     baseBoardRevision: number;
     operations: CanvasMutationOperation[];
   } | null>(null);
+
+  const refreshIngestions = useCallback(async () => {
+    const response = await fetch(`/api/boards/${boardId}/ingestions`, {
+      cache: "no-store"
+    });
+    if (!response.ok) throw new Error("Ingestion status load failed");
+    const parsed = ingestionStatusListSchema.parse(await response.json());
+    setIngestions(parsed.ingestions);
+  }, [boardId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        await refreshIngestions();
+      } catch {
+        if (!cancelled) setMessage("暂时无法更新来源处理状态。");
+      }
+    };
+    void poll();
+    const timer = window.setInterval(() => void poll(), 2_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [refreshIngestions]);
 
   const commitGraph = useCallback(
     (next: CanvasGraph, options: { remember?: boolean; notice?: string } = {}) => {
@@ -731,6 +783,177 @@ export function PersistentCanvasEditor({
     [graph.nodes, selectedIds]
   );
 
+  const latestIngestionByNode = useMemo(() => {
+    const values = new Map<string, IngestionStatus>();
+    for (const ingestion of ingestions) {
+      if (!values.has(ingestion.nodeId)) values.set(ingestion.nodeId, ingestion);
+    }
+    return values;
+  }, [ingestions]);
+  const selectedIngestion = selectedNode
+    ? (latestIngestionByNode.get(selectedNode.id) ?? null)
+    : null;
+  const displayGraph = useMemo<CanvasGraph>(
+    () => ({
+      ...graph,
+      nodes: graph.nodes.map((node) => {
+        const ingestion = latestIngestionByNode.get(node.id);
+        if (!ingestion) return node;
+        const status =
+          ingestion.status === "queued"
+            ? "queued"
+            : ingestion.status === "running"
+              ? "processing"
+              : ingestion.status === "succeeded"
+                ? ingestion.warnings.length > 0
+                  ? "ready_with_warning"
+                  : "ready"
+                : ingestion.status === "failed" || ingestion.status === "cancelled"
+                  ? "failed"
+                  : node.payload.status;
+        return {
+          ...node,
+          payload: {
+            ...node.payload,
+            status,
+            progress:
+              ingestion.status === "queued" || ingestion.status === "running"
+                ? ingestion.progress
+                : null
+          }
+        } as CanvasNode;
+      })
+    }),
+    [graph, latestIngestionByNode]
+  );
+
+  const uploadSourceFile = useCallback(async () => {
+    if (
+      !selectedNode ||
+      selectedNode.payload.kind !== "pdf" ||
+      !sourceFile ||
+      sourceFile.nodeId !== selectedNode.id
+    ) {
+      return;
+    }
+    if (saveState !== "saved") {
+      setMessage("请等待节点保存完成后再上传。");
+      return;
+    }
+    setSourceActionState("uploading");
+    setMessage(null);
+    try {
+      const file = sourceFile.file;
+      const mimeType =
+        file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
+          ? "application/pdf"
+          : "text/plain";
+      const checksumSha256 = await sha256Hex(file);
+      const intentResponse = await fetch(
+        `/api/boards/${boardId}/ingestions/upload-intents`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            mutationId: crypto.randomUUID(),
+            nodeId: selectedNode.id,
+            fileName: file.name,
+            mimeType,
+            size: file.size,
+            checksumSha256
+          })
+        }
+      );
+      if (!intentResponse.ok) throw new Error(await apiErrorMessage(intentResponse));
+      const intent = (await intentResponse.json()) as {
+        assetId: string;
+        uploadUrl: string;
+        uploadHeaders: Record<string, string>;
+      };
+      const uploadResponse = await fetch(intent.uploadUrl, {
+        method: "PUT",
+        headers: intent.uploadHeaders,
+        body: file
+      });
+      if (!uploadResponse.ok) throw new Error("文件上传失败，请检查对象存储服务。");
+      const completionResponse = await fetch(
+        `/api/boards/${boardId}/ingestions/uploads/complete`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            mutationId: crypto.randomUUID(),
+            assetId: intent.assetId,
+            nodeId: selectedNode.id
+          })
+        }
+      );
+      if (!completionResponse.ok) {
+        throw new Error(await apiErrorMessage(completionResponse));
+      }
+      await refreshIngestions();
+      setMessage("文件已上传，正在后台提取内容。");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "文件上传失败。");
+    } finally {
+      setSourceActionState("idle");
+    }
+  }, [boardId, refreshIngestions, saveState, selectedNode, sourceFile]);
+
+  const submitRemoteSource = useCallback(async () => {
+    if (
+      !selectedNode ||
+      (selectedNode.payload.kind !== "webpage" && selectedNode.payload.kind !== "video")
+    ) {
+      return;
+    }
+    if (saveState !== "saved") {
+      setMessage("请等待节点保存完成后再导入网址。");
+      return;
+    }
+    setSourceActionState("submitting");
+    try {
+      const response = await fetch(`/api/boards/${boardId}/ingestions`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          mutationId: crypto.randomUUID(),
+          nodeId: selectedNode.id,
+          url: selectedNode.payload.url
+        })
+      });
+      if (!response.ok) throw new Error(await apiErrorMessage(response));
+      await refreshIngestions();
+      setMessage("网址已加入处理队列。");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "网址导入失败。");
+    } finally {
+      setSourceActionState("idle");
+    }
+  }, [boardId, refreshIngestions, saveState, selectedNode]);
+
+  const retrySelectedIngestion = useCallback(async () => {
+    if (!selectedIngestion?.error?.retryable) return;
+    setSourceActionState("retrying");
+    try {
+      const response = await fetch(
+        `/api/boards/${boardId}/ingestions/${selectedIngestion.id}/retry`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ mutationId: crypto.randomUUID() })
+        }
+      );
+      if (!response.ok) throw new Error(await apiErrorMessage(response));
+      await refreshIngestions();
+      setMessage("已重新加入处理队列。");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "重试失败。");
+    } finally {
+      setSourceActionState("idle");
+    }
+  }, [boardId, refreshIngestions, selectedIngestion]);
+
   const updatePayload = useCallback(
     (payload: CanvasNodePayload) => {
       if (!selectedNode) return;
@@ -880,7 +1103,7 @@ export function PersistentCanvasEditor({
 
         <div className="m2-canvas-stage">
           <CanvasSurface
-            graph={graph}
+            graph={displayGraph}
             ariaLabel="可编辑的 Siftloom 无限画布"
             editable
             focusNodeId={focusNodeId}
@@ -956,24 +1179,115 @@ export function PersistentCanvasEditor({
               ) : null}
               {selectedNode.payload.kind === "webpage" ||
               selectedNode.payload.kind === "video" ? (
-                <label>
-                  URL
-                  <input
-                    type="url"
-                    placeholder="https://"
-                    value={selectedNode.payload.url}
-                    onChange={(event) => updateKindPayload("url", event.target.value)}
-                  />
-                </label>
+                <div className="m3-source-control">
+                  <label>
+                    URL
+                    <input
+                      type="url"
+                      placeholder={
+                        selectedNode.payload.kind === "video"
+                          ? "https://youtube.com/watch?v=…"
+                          : "https://example.com/article"
+                      }
+                      value={selectedNode.payload.url}
+                      onChange={(event) => updateKindPayload("url", event.target.value)}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => void submitRemoteSource()}
+                    disabled={
+                      sourceActionState !== "idle" ||
+                      saveState !== "saved" ||
+                      selectedNode.payload.url.length === 0
+                    }
+                  >
+                    {sourceActionState === "submitting" ? (
+                      <LoaderCircle className="spin" size={13} />
+                    ) : (
+                      <Globe2 size={13} />
+                    )}
+                    {selectedNode.payload.kind === "video" ? "读取公开视频" : "导入网页"}
+                  </button>
+                  {selectedNode.payload.kind === "video" ? (
+                    <small>仅读取公开 YouTube 元数据；不会下载视频或绕过字幕权限。</small>
+                  ) : null}
+                </div>
               ) : null}
               {selectedNode.payload.kind === "pdf" ? (
-                <label>
-                  文件名
-                  <input
-                    value={selectedNode.payload.fileName}
-                    onChange={(event) => updateKindPayload("fileName", event.target.value)}
-                  />
-                </label>
+                <div className="m3-source-control">
+                  <label>
+                    PDF 或 TXT 文件
+                    <input
+                      type="file"
+                      accept=".pdf,.txt,application/pdf,text/plain"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0] ?? null;
+                        setSourceFile(file ? { nodeId: selectedNode.id, file } : null);
+                        if (file) updateKindPayload("fileName", file.name);
+                      }}
+                    />
+                  </label>
+                  <small>PDF 最大 25 MB / 200 页；TXT 最大 5 MB，须为 UTF-8。</small>
+                  <button
+                    type="button"
+                    onClick={() => void uploadSourceFile()}
+                    disabled={
+                      !sourceFile ||
+                      sourceFile.nodeId !== selectedNode.id ||
+                      sourceActionState !== "idle" ||
+                      saveState !== "saved"
+                    }
+                  >
+                    {sourceActionState === "uploading" ? (
+                      <LoaderCircle className="spin" size={13} />
+                    ) : (
+                      <Upload size={13} />
+                    )}
+                    上传并提取
+                  </button>
+                </div>
+              ) : null}
+              {selectedIngestion ? (
+                <div className={`m3-ingestion m3-ingestion--${selectedIngestion.status}`}>
+                  <div>
+                    <strong>
+                      {selectedIngestion.status === "queued" && "等待处理"}
+                      {selectedIngestion.status === "running" && "正在提取"}
+                      {selectedIngestion.status === "succeeded" && "内容已就绪"}
+                      {selectedIngestion.status === "failed" && "处理失败"}
+                      {selectedIngestion.status === "cancelled" && "处理已取消"}
+                    </strong>
+                    <span>{selectedIngestion.progress}%</span>
+                  </div>
+                  {(selectedIngestion.status === "queued" ||
+                    selectedIngestion.status === "running") && (
+                    <div className="m3-ingestion__progress">
+                      <span style={{ width: `${selectedIngestion.progress}%` }} />
+                    </div>
+                  )}
+                  {selectedIngestion.artifact ? (
+                    <p>
+                      {selectedIngestion.artifact.segmentCount} 个片段 ·{" "}
+                      {selectedIngestion.artifact.extractedCharacters.toLocaleString()} 字符
+                    </p>
+                  ) : null}
+                  {selectedIngestion.warnings.includes("transcript_unavailable") ? (
+                    <p>公开视频字幕不可用；当前仅保存元数据。你可上传有权处理的文字稿。</p>
+                  ) : null}
+                  {selectedIngestion.error ? (
+                    <p role="alert">{selectedIngestion.error.message}</p>
+                  ) : null}
+                  {selectedIngestion.error?.retryable ? (
+                    <button
+                      type="button"
+                      onClick={() => void retrySelectedIngestion()}
+                      disabled={sourceActionState !== "idle"}
+                    >
+                      <RefreshCw size={13} /> 重试处理
+                    </button>
+                  ) : null}
+                </div>
               ) : null}
               {selectedNode.payload.kind === "chat" ? (
                 <label>

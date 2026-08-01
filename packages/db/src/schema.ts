@@ -5,6 +5,7 @@ import {
   check,
   foreignKey,
   index,
+  integer,
   jsonb,
   pgEnum,
   pgTable,
@@ -26,6 +27,40 @@ export const canvasNodeKind = pgEnum("canvas_node_kind", [
   "video",
   "chat",
   "group"
+]);
+export const assetSourceType = pgEnum("asset_source_type", [
+  "upload",
+  "webpage",
+  "youtube"
+]);
+export const assetStatus = pgEnum("asset_status", [
+  "pending",
+  "verified",
+  "ready",
+  "failed",
+  "quarantined"
+]);
+export const ingestionJobStatus = pgEnum("ingestion_job_status", [
+  "queued",
+  "running",
+  "succeeded",
+  "failed",
+  "cancelled"
+]);
+export const ingestionAttemptStatus = pgEnum("ingestion_attempt_status", [
+  "queued",
+  "running",
+  "succeeded",
+  "failed",
+  "cancelled"
+]);
+export const ingestionAttemptStage = pgEnum("ingestion_attempt_stage", [
+  "validating",
+  "fetching",
+  "extracting",
+  "transcribing",
+  "normalizing",
+  "storing"
 ]);
 
 export const authUsers = pgTable(
@@ -266,5 +301,263 @@ export const mutationReceipts = pgTable(
       name: "mutation_receipt_board_scope_fk"
     }).onDelete("cascade"),
     check("mutation_revision_order", sql`${table.resultRevision} >= ${table.baseRevision}`)
+  ]
+);
+
+export const assets = pgTable(
+  "asset",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id").notNull(),
+    boardId: uuid("board_id").notNull(),
+    sourceType: assetSourceType("source_type").notNull(),
+    status: assetStatus("status").notNull().default("pending"),
+    objectKey: text("object_key"),
+    originalFileName: text("original_file_name"),
+    sourceUrl: text("source_url"),
+    declaredMime: text("declared_mime"),
+    detectedMime: text("detected_mime"),
+    declaredSize: bigint("declared_size", { mode: "number" }),
+    actualSize: bigint("actual_size", { mode: "number" }),
+    contentHash: text("content_hash"),
+    uploadMutationId: uuid("upload_mutation_id"),
+    completionMutationId: uuid("completion_mutation_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("asset_workspace_board_id_unique").on(
+      table.workspaceId,
+      table.boardId,
+      table.id
+    ),
+    uniqueIndex("asset_workspace_upload_mutation_unique")
+      .on(table.workspaceId, table.uploadMutationId)
+      .where(sql`${table.uploadMutationId} is not null`),
+    uniqueIndex("asset_workspace_object_key_unique")
+      .on(table.workspaceId, table.objectKey)
+      .where(sql`${table.objectKey} is not null`),
+    index("asset_workspace_board_created_idx").on(
+      table.workspaceId,
+      table.boardId,
+      table.createdAt
+    ),
+    foreignKey({
+      columns: [table.workspaceId, table.boardId],
+      foreignColumns: [boards.workspaceId, boards.id],
+      name: "asset_board_scope_fk"
+    }).onDelete("cascade"),
+    check(
+      "asset_source_locator_present",
+      sql`(${table.sourceType} = 'upload' AND ${table.objectKey} IS NOT NULL AND ${table.sourceUrl} IS NULL)
+        OR (${table.sourceType} IN ('webpage', 'youtube') AND ${table.sourceUrl} IS NOT NULL AND ${table.objectKey} IS NULL)`
+    ),
+    check(
+      "asset_size_nonnegative",
+      sql`${table.declaredSize} IS NULL OR ${table.declaredSize} > 0`
+    ),
+    check(
+      "asset_actual_size_nonnegative",
+      sql`${table.actualSize} IS NULL OR ${table.actualSize} > 0`
+    )
+  ]
+);
+
+export const ingestionJobs = pgTable(
+  "ingestion_job",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id").notNull(),
+    boardId: uuid("board_id").notNull(),
+    nodeId: uuid("node_id").notNull(),
+    assetId: uuid("asset_id").notNull(),
+    submissionMutationId: uuid("submission_mutation_id").notNull(),
+    retryOfJobId: uuid("retry_of_job_id"),
+    status: ingestionJobStatus("status").notNull().default("queued"),
+    warningCodes: jsonb("warning_codes").$type<string[]>().notNull().default([]),
+    errorCode: text("error_code"),
+    errorMessage: text("error_message"),
+    retryable: boolean("retryable").notNull().default(false),
+    revision: bigint("revision", { mode: "number" }).notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    finishedAt: timestamp("finished_at", { withTimezone: true })
+  },
+  (table) => [
+    uniqueIndex("ingestion_job_workspace_board_id_unique").on(
+      table.workspaceId,
+      table.boardId,
+      table.id
+    ),
+    uniqueIndex("ingestion_job_workspace_submission_unique").on(
+      table.workspaceId,
+      table.submissionMutationId
+    ),
+    index("ingestion_job_workspace_board_updated_idx").on(
+      table.workspaceId,
+      table.boardId,
+      table.updatedAt
+    ),
+    index("ingestion_job_asset_idx").on(table.workspaceId, table.assetId),
+    foreignKey({
+      columns: [table.workspaceId, table.boardId],
+      foreignColumns: [boards.workspaceId, boards.id],
+      name: "ingestion_job_board_scope_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.workspaceId, table.boardId, table.nodeId],
+      foreignColumns: [nodes.workspaceId, nodes.boardId, nodes.id],
+      name: "ingestion_job_node_scope_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.workspaceId, table.boardId, table.assetId],
+      foreignColumns: [assets.workspaceId, assets.boardId, assets.id],
+      name: "ingestion_job_asset_scope_fk"
+    }).onDelete("cascade"),
+    check("ingestion_job_revision_nonnegative", sql`${table.revision} >= 0`),
+    check(
+      "ingestion_job_terminal_finished",
+      sql`${table.status} NOT IN ('succeeded', 'failed', 'cancelled') OR ${table.finishedAt} IS NOT NULL`
+    )
+  ]
+);
+
+export const ingestionAttempts = pgTable(
+  "ingestion_attempt",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id").notNull(),
+    boardId: uuid("board_id").notNull(),
+    jobId: uuid("job_id").notNull(),
+    attemptNumber: integer("attempt_number").notNull(),
+    status: ingestionAttemptStatus("status").notNull().default("queued"),
+    stage: ingestionAttemptStage("stage").notNull().default("validating"),
+    progress: integer("progress").notNull().default(0),
+    leaseToken: uuid("lease_token").notNull(),
+    errorCode: text("error_code"),
+    errorMessage: text("error_message"),
+    retryable: boolean("retryable").notNull().default(false),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("ingestion_attempt_workspace_job_number_unique").on(
+      table.workspaceId,
+      table.jobId,
+      table.attemptNumber
+    ),
+    uniqueIndex("ingestion_attempt_workspace_board_id_unique").on(
+      table.workspaceId,
+      table.boardId,
+      table.id
+    ),
+    index("ingestion_attempt_job_created_idx").on(table.jobId, table.createdAt),
+    foreignKey({
+      columns: [table.workspaceId, table.boardId, table.jobId],
+      foreignColumns: [ingestionJobs.workspaceId, ingestionJobs.boardId, ingestionJobs.id],
+      name: "ingestion_attempt_job_scope_fk"
+    }).onDelete("cascade"),
+    check("ingestion_attempt_number_positive", sql`${table.attemptNumber} > 0`),
+    check("ingestion_attempt_progress_bounds", sql`${table.progress} BETWEEN 0 AND 100`),
+    check(
+      "ingestion_attempt_terminal_finished",
+      sql`${table.status} NOT IN ('succeeded', 'failed', 'cancelled') OR ${table.finishedAt} IS NOT NULL`
+    )
+  ]
+);
+
+export const extractionArtifacts = pgTable(
+  "extraction_artifact",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id").notNull(),
+    boardId: uuid("board_id").notNull(),
+    assetId: uuid("asset_id").notNull(),
+    jobId: uuid("job_id").notNull(),
+    attemptId: uuid("attempt_id").notNull(),
+    version: integer("version").notNull().default(1),
+    title: text("title"),
+    sourceMime: text("source_mime").notNull(),
+    contentHash: text("content_hash").notNull(),
+    extractorVersion: text("extractor_version").notNull(),
+    extractedCharacters: integer("extracted_characters").notNull(),
+    warningCodes: jsonb("warning_codes").$type<string[]>().notNull().default([]),
+    provenance: jsonb("provenance").$type<Record<string, unknown>>().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("extraction_artifact_workspace_board_id_unique").on(
+      table.workspaceId,
+      table.boardId,
+      table.id
+    ),
+    uniqueIndex("extraction_artifact_asset_version_unique").on(
+      table.workspaceId,
+      table.assetId,
+      table.version
+    ),
+    uniqueIndex("extraction_artifact_attempt_unique").on(table.attemptId),
+    foreignKey({
+      columns: [table.workspaceId, table.boardId, table.assetId],
+      foreignColumns: [assets.workspaceId, assets.boardId, assets.id],
+      name: "extraction_artifact_asset_scope_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.workspaceId, table.boardId, table.jobId],
+      foreignColumns: [ingestionJobs.workspaceId, ingestionJobs.boardId, ingestionJobs.id],
+      name: "extraction_artifact_job_scope_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.workspaceId, table.boardId, table.attemptId],
+      foreignColumns: [
+        ingestionAttempts.workspaceId,
+        ingestionAttempts.boardId,
+        ingestionAttempts.id
+      ],
+      name: "extraction_artifact_attempt_scope_fk"
+    }).onDelete("cascade"),
+    check("extraction_artifact_version_positive", sql`${table.version} > 0`),
+    check(
+      "extraction_artifact_characters_nonnegative",
+      sql`${table.extractedCharacters} >= 0`
+    )
+  ]
+);
+
+export const extractionSegments = pgTable(
+  "extraction_segment",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id").notNull(),
+    boardId: uuid("board_id").notNull(),
+    artifactId: uuid("artifact_id").notNull(),
+    ordinal: integer("ordinal").notNull(),
+    text: text("text").notNull(),
+    location: jsonb("location").$type<Record<string, unknown>>().notNull().default({}),
+    contentHash: text("content_hash").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("extraction_segment_artifact_ordinal_unique").on(
+      table.artifactId,
+      table.ordinal
+    ),
+    index("extraction_segment_workspace_artifact_idx").on(
+      table.workspaceId,
+      table.artifactId
+    ),
+    foreignKey({
+      columns: [table.workspaceId, table.boardId, table.artifactId],
+      foreignColumns: [
+        extractionArtifacts.workspaceId,
+        extractionArtifacts.boardId,
+        extractionArtifacts.id
+      ],
+      name: "extraction_segment_artifact_scope_fk"
+    }).onDelete("cascade"),
+    check("extraction_segment_ordinal_nonnegative", sql`${table.ordinal} >= 0`),
+    check("extraction_segment_text_not_empty", sql`char_length(${table.text}) > 0`)
   ]
 );
