@@ -57,6 +57,12 @@ if (
   failures.push("BETTER_AUTH_SECRET must be at least 32 non-placeholder characters");
 }
 
+const googleClientIdConfigured = Boolean(process.env.GOOGLE_CLIENT_ID?.trim());
+const googleClientSecretConfigured = Boolean(process.env.GOOGLE_CLIENT_SECRET?.trim());
+if (googleClientIdConfigured !== googleClientSecretConfigured) {
+  failures.push("Google OAuth requires both GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET");
+}
+
 if (profile === "production") {
   if (process.env.DEPLOYMENT_ENV !== "production") {
     failures.push("DEPLOYMENT_ENV must be production");
@@ -66,9 +72,7 @@ if (profile === "production") {
   if (process.env.AUTH_ENABLE_PASSWORD === "true") {
     failures.push("AUTH_ENABLE_PASSWORD must not be enabled in production");
   }
-  const googleConfigured = Boolean(
-    process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-  );
+  const googleConfigured = googleClientIdConfigured && googleClientSecretConfigured;
   const emailConfigured = Boolean(
     process.env.RESEND_API_KEY && process.env.AUTH_EMAIL_FROM
   );

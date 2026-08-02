@@ -66,6 +66,22 @@ export function AuthPanel({ capabilities }: AuthPanelProps) {
     }
   }
 
+  async function signInWithGoogle() {
+    setPending(true);
+    setMessage(null);
+    try {
+      const result = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/boards",
+        errorCallbackURL: "/sign-in?error=google"
+      });
+      if (result.error) throw new Error(result.error.message);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "无法开始 Google 登录，请重试。");
+      setPending(false);
+    }
+  }
+
   const noMethod =
     !capabilities.google && !capabilities.magicLink && !capabilities.password;
 
@@ -77,9 +93,7 @@ export function AuthPanel({ capabilities }: AuthPanelProps) {
           type="button"
           disabled={!interactive || pending}
           suppressHydrationWarning
-          onClick={() =>
-            void authClient.signIn.social({ provider: "google", callbackURL: "/boards" })
-          }
+          onClick={() => void signInWithGoogle()}
         >
           <span className="auth-provider__mark" aria-hidden="true">
             G

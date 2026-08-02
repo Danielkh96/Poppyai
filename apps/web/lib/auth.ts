@@ -10,9 +10,15 @@ import { getAuthDatabaseClient } from "@/lib/server/database";
 const productionDeployment = process.env.DEPLOYMENT_ENV === "production";
 const passwordEnabled =
   !productionDeployment && process.env.AUTH_ENABLE_PASSWORD === "true";
-const googleEnabled = Boolean(
-  process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-);
+const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim();
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
+if (Boolean(googleClientId) !== Boolean(googleClientSecret)) {
+  throw new Error("Google OAuth requires both GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET");
+}
+const googleEnabled = Boolean(googleClientId && googleClientSecret);
+const googleRedirectUri = process.env.BETTER_AUTH_URL
+  ? new URL("/api/auth/callback/google", process.env.BETTER_AUTH_URL).toString()
+  : undefined;
 const magicLinkEnabled = Boolean(process.env.RESEND_API_KEY && process.env.AUTH_EMAIL_FROM);
 
 async function sendMagicLinkEmail(email: string, url: string): Promise<void> {
@@ -64,8 +70,9 @@ export const auth = betterAuth({
   socialProviders: googleEnabled
     ? {
         google: {
-          clientId: process.env.GOOGLE_CLIENT_ID!,
-          clientSecret: process.env.GOOGLE_CLIENT_SECRET!
+          clientId: googleClientId!,
+          clientSecret: googleClientSecret!,
+          redirectURI: googleRedirectUri
         }
       }
     : undefined,

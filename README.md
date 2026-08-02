@@ -39,9 +39,14 @@ URL; auth, web, and worker use separate `NOSUPERUSER`/`NOBYPASSRLS` roles. The a
 can access only Better Auth identity tables, while the web role reaches business data
 through RLS-scoped transactions and a narrow default-workspace provisioning function.
 
-`AUTH_ENABLE_PASSWORD=true` is honored only outside production. For a production login
-path, configure `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` and/or
-`RESEND_API_KEY`/`AUTH_EMAIL_FROM`. Never commit real values.
+`AUTH_ENABLE_PASSWORD=true` is honored only when `DEPLOYMENT_ENV` is not `production`.
+For Google login, create a **Web application** OAuth client and register the exact local
+redirect URI `http://localhost:3000/api/auth/callback/google`. Register
+`https://your-domain/api/auth/callback/google` for production, set `BETTER_AUTH_URL` to
+the matching origin, then provide both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in
+the deployment secret store. A partial Google configuration is rejected. Production may
+alternatively use `RESEND_API_KEY`/`AUTH_EMAIL_FROM` for magic links. Never commit real
+credential values.
 
 Set `YOUTUBE_API_KEY` to enable public YouTube metadata ingestion. Siftloom never
 downloads video bytes or scrapes restricted transcripts; when a transcript is unavailable,
