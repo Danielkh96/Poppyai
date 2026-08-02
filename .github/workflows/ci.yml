@@ -92,7 +92,14 @@ jobs:
           pnpm test:db && pnpm audit:deps
 
       - name: Validate local release configuration and recovery path
-        run: pnpm release:config:local && pnpm backup:smoke
+        run: |
+          pnpm release:config:local
+          postgres_container="$(docker ps --filter ancestor=postgres:17.9-alpine --format '{{.ID}}')"
+          if [[ -z "$postgres_container" || "$postgres_container" == *$'\n'* ]]; then
+            echo "Expected exactly one PostgreSQL service container" >&2
+            exit 1
+          fi
+          BACKUP_SMOKE_DOCKER_CONTAINER="$postgres_container" pnpm backup:smoke
 
       - name: Build production artifacts
         run: pnpm build

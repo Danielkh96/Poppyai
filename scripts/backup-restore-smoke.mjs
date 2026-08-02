@@ -25,6 +25,7 @@ targetUrl.pathname = `/${targetName}`;
 const sourceDatabase = decodeURIComponent(sourceUrl.pathname.slice(1));
 const databaseUser = decodeURIComponent(sourceUrl.username);
 const databasePassword = decodeURIComponent(sourceUrl.password);
+const dockerContainer = process.env.BACKUP_SMOKE_DOCKER_CONTAINER?.trim();
 const temporaryDirectory = await mkdtemp(path.join(tmpdir(), "siftloom-backup-smoke-"));
 const dumpPath = path.join(temporaryDirectory, "backup.dump");
 let targetCreated = false;
@@ -37,6 +38,7 @@ function spawn(program, args, options = {}) {
 }
 
 const hostCliAvailable =
+  !dockerContainer &&
   spawn("psql", ["--version"], {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"]
@@ -44,7 +46,13 @@ const hostCliAvailable =
 
 function assertSuccess(result, label) {
   if (result.status !== 0) {
-    throw new Error(`${label} failed with exit code ${String(result.status)}`);
+    const detail = result.stderr
+      ?.toString()
+      .trim()
+      .replaceAll(databasePassword, "[redacted]");
+    throw new Error(
+      `${label} failed with exit code ${String(result.status)}${detail ? `: ${detail}` : ""}`
+    );
   }
 }
 
@@ -55,20 +63,27 @@ function hostRun(program, args, label, options = {}) {
 }
 
 function dockerRun(program, args, label, options = {}) {
-  const result = spawn(
-    "docker",
-    [
-      "compose",
-      "exec",
-      "-T",
-      "-e",
-      `PGPASSWORD=${databasePassword}`,
-      "postgres",
-      program,
-      ...args
-    ],
-    options
-  );
+  const dockerArguments = dockerContainer
+    ? [
+        "exec",
+        "-i",
+        "-e",
+        `PGPASSWORD=${databasePassword}`,
+        dockerContainer,
+        program,
+        ...args
+      ]
+    : [
+        "compose",
+        "exec",
+        "-T",
+        "-e",
+        `PGPASSWORD=${databasePassword}`,
+        "postgres",
+        program,
+        ...args
+      ];
+  const result = spawn("docker", dockerArguments, options);
   assertSuccess(result, label);
   return result;
 }
