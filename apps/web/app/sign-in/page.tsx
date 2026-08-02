@@ -12,7 +12,7 @@ export default async function SignInPage() {
   if (await getAuthContext()) redirect("/boards");
 
   return (
-    <main className="auth-page">
+    <main className="auth-page" id="main-content">
       <section className="auth-story">
         <Link href="/" className="wordmark" aria-label="Siftloom 首页">
           <span className="brand-mark" aria-hidden="true">

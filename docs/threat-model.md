@@ -60,6 +60,13 @@ authorization.
 | Resource exhaustion and cost abuse                                 | Central file/page/time/token/rate/workspace limits; preflight and worker enforcement; per-account/workspace/IP dimensions; bounded queue depth/concurrency/retries; cancellations; reservations reconciled with actual usage                                                                                                           | Limit boundary tests, concurrency race tests, retry-storm simulation, oversized/slow/decompression fixtures, quota failure UX                                                                           |
 | Deletion/retention bypass                                          | Immediate authorization removal; tombstone prevents new context/job use; delete all DB/object/artifact/cache records by policy; queued work cancelled; backup expiry documented; idempotent deletion workflow                                                                                                                          | Deleted resource cannot be read, signed, processed, cited, or regenerated; inventory reconciliation; backup-expiry exercise                                                                             |
 
+M5 additionally persists only normalized canvas save outcome metadata in an append-only,
+forced-RLS `operational_event` table. The tenant-scoped operations view derives alert
+counts and queue ages from canonical records and never returns source, prompt, response,
+filename, URL, credential, or signed-link content. Security headers deny framing and
+objects, constrain browser capabilities, and make the referrer policy explicit; automated
+checks also reject forged mutation origins and render hostile names as inert text.
+
 ## Important abuse cases
 
 ### Autosave acknowledgement without durable state

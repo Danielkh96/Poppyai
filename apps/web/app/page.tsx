@@ -22,7 +22,7 @@ const architecture = [
 
 export default function HomePage() {
   return (
-    <main className="m0-page">
+    <main className="m0-page" id="main-content">
       <nav className="site-nav" aria-label="主要导航">
         <Link href="/" className="wordmark" aria-label="Siftloom 首页">
           <span className="brand-mark" aria-hidden="true">
@@ -31,7 +31,7 @@ export default function HomePage() {
           <span>Siftloom</span>
         </Link>
         <span className="m0-pill">
-          <span aria-hidden="true" /> M0 foundation
+          <span aria-hidden="true" /> M5 private-alpha hardening
         </span>
         <div className="site-nav__right">
           <a href="/api/health" className="quiet-link">
@@ -56,7 +56,7 @@ export default function HomePage() {
               <Gauge size={17} /> 创建第一张 Board <ArrowRight size={16} />
             </Link>
             <span className="build-status">
-              <Check size={15} /> M1 identity & boards
+              <Check size={15} /> M4 grounded AI complete
             </span>
           </div>
           <div className="principle-row" aria-label="产品原则">
@@ -107,26 +107,26 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="m0-status" aria-label="M0 当前结果">
+      <section className="m0-status" aria-label="M5 当前结果">
         <article>
           <span>01</span>
           <div>
-            <strong>技术路线已冻结</strong>
-            <p>便携模块化单体，Web 与 Worker 分开部署。</p>
+            <strong>来源边界可验证</strong>
+            <p>租户隔离、版本快照与显式连线共同约束 AI 上下文。</p>
           </div>
         </article>
         <article>
           <span>02</span>
           <div>
-            <strong>风险边界已定义</strong>
-            <p>浏览器、存储、抓取、队列、AI 与日志逐层隔离。</p>
+            <strong>完整研究路径已贯通</strong>
+            <p>导入、整理、保存、生成、引用与恢复均使用规范持久数据。</p>
           </div>
         </article>
         <article>
           <span>03</span>
           <div>
-            <strong>性能夹具已固化</strong>
-            <p>200 节点、300 连线、进度与流式状态。</p>
+            <strong>私测运维门禁已落地</strong>
+            <p>运行健康、发布配置、备份恢复与隐私说明进入发布检查。</p>
           </div>
         </article>
       </section>
@@ -134,7 +134,7 @@ export default function HomePage() {
       <section className="architecture-section">
         <div>
           <span className="eyebrow">Implementation baseline</span>
-          <h2>一套能从 M0 长到私测版的骨架。</h2>
+          <h2>从研究材料到可追溯答案的私测闭环。</h2>
           <p>
             领域类型不依赖画布或 AI
             SDK；数据库是规范事实来源，外部副作用保持幂等，自动化测试默认不调用付费模型。
@@ -159,19 +159,19 @@ export default function HomePage() {
         </div>
         <div>
           <span className="eyebrow">Next gate</span>
-          <h2>M1：身份、租户与 Board 生命周期</h2>
+          <h2>M5：完成私测发布门槛</h2>
           <p>
-            真实会话、默认 workspace 与 Board 创建、重命名、归档和恢复已进入可运行路径。
+            对发布候选执行跨浏览器场景、无障碍、安全、性能、备份恢复与生产配置核验；外部供应商和部署审批保持显式门禁。
           </p>
         </div>
-        <Link href="/prototype/canvas" className="secondary-action">
-          查看 M0 画布基准 <ArrowRight size={16} />
+        <Link href="/operations" className="secondary-action">
+          查看运行健康 <ArrowRight size={16} />
         </Link>
       </section>
 
       <footer className="site-footer">
         <span>Siftloom · working name pending legal clearance</span>
-        <span>M1 / 2026-08-01</span>
+        <span>M5 / 2026-08-02</span>
       </footer>
     </main>
   );

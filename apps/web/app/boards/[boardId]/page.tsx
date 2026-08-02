@@ -37,7 +37,7 @@ export default async function BoardPage({
   const { board, canvas } = await loadBoard(boardId, context);
 
   return (
-    <main className="m2-board-page">
+    <main className="m2-board-page" id="main-content">
       <header className="m2-board-header">
         <div>
           <Link href="/boards" className="icon-button" aria-label="返回 Boards">

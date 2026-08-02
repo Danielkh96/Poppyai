@@ -1,5 +1,5 @@
 import { listBoards } from "@siftloom/db";
-import { Command, ShieldCheck } from "lucide-react";
+import { Activity, Command, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -21,7 +21,7 @@ export default async function BoardsPage() {
   ]);
 
   return (
-    <main className="workspace-page">
+    <main className="workspace-page" id="main-content">
       <nav className="workspace-nav" aria-label="工作区导航">
         <Link href="/" className="wordmark">
           <span className="brand-mark" aria-hidden="true">
@@ -41,6 +41,12 @@ export default async function BoardsPage() {
             <small>{context.user.email}</small>
           </span>
         </span>
+        <Link href="/operations" className="workspace-nav__operations">
+          <Activity size={14} /> 运行健康
+        </Link>
+        <Link href="/trust" className="workspace-nav__operations">
+          <ShieldCheck size={14} /> 数据说明
+        </Link>
         <SignOutButton />
       </nav>
       <BoardDashboard initialActive={active} initialArchived={archived} />

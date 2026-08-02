@@ -4,3 +4,4 @@ export * from "./chat.js";
 export * from "./ids.js";
 export * from "./ingestion.js";
 export * from "./limits.js";
+export * from "./operations.js";

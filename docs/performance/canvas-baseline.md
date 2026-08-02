@@ -1,6 +1,6 @@
 # Canvas performance baseline
 
-Status: M0 and M2 short/15-minute post-GC baselines pass on the documented M4
+Status: M0, M2, and M5 short/15-minute post-GC baselines pass on the documented M5
 development host; lower-spec reference-device approval remains pending.
 
 ## Canonical fixture
@@ -72,6 +72,7 @@ no unrelated foreground workload. Record exact values for every approved baselin
 | Short run timestamp                | 2026-08-01 15:55:58 +08:00                                                                                                                                                                |
 | Accepted soak timestamp            | 2026-08-01 16:34:57 +08:00                                                                                                                                                                |
 | M2 soak timestamp                  | 2026-08-01 21:12:53 +08:00                                                                                                                                                                |
+| M5 soak timestamp                  | 2026-08-02 12:03:54 +08:00                                                                                                                                                                |
 
 ## Provisional gates to calibrate
 
@@ -93,6 +94,13 @@ The M2 rerun against the editable adapter and versioned payload model is recorde
 frames over 15 minutes with 17.3 ms p95 frame time, 99.99% at or below 20 ms, 15.3 ms
 pointer-to-next-paint p95, a 73 ms longest task, and 5.97% post-GC heap growth from minute
 5 to minute 15. All calibrated M2 gates pass on the documented host.
+
+The M5 release-candidate rerun is recorded at
+[`runs/m5-2026-08-02-soak.json`](runs/m5-2026-08-02-soak.json). It sampled 53,999
+frames over 15 minutes with 17.3 ms p95 frame time, 100% at or below 20 ms, 15.8 ms
+pointer-to-next-paint p95, no reported long-task entry, and 6.14% post-GC heap growth
+from minute 5 to minute 15. The controller was active during the final sample and all
+calibrated gates pass on the documented M5 development host.
 `latest.local.json` is ignored, overwriteable diagnostic output; accepted evidence is
 copied into `runs/` with its machine and source fingerprint.
 

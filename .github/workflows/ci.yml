@@ -26,6 +26,13 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      s3mock:
+        image: adobe/s3mock:5.1.0
+        env:
+          COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: siftloom-local
+        ports:
+          - 9090:9090
+          - 9191:9191
     env:
       MIGRATION_DATABASE_URL: postgresql://siftloom_admin:siftloom_admin_ci_only@localhost:5432/siftloom
       AUTH_DATABASE_URL: postgresql://siftloom_auth:siftloom_auth_ci_only@localhost:5432/siftloom
@@ -39,6 +46,15 @@ jobs:
       BETTER_AUTH_URL: http://127.0.0.1:3207
       BETTER_AUTH_SECRET: ci-only-better-auth-secret-at-least-32-bytes
       AUTH_ENABLE_PASSWORD: "true"
+      DEPLOYMENT_ENV: local
+      SUPPORT_EMAIL: support@siftloom.local
+      PRIVACY_CONTACT_EMAIL: privacy@siftloom.local
+      S3_REGION: us-east-1
+      S3_ENDPOINT: http://localhost:9090
+      S3_BUCKET: siftloom-local
+      S3_ACCESS_KEY_ID: local-s3mock
+      S3_SECRET_ACCESS_KEY: local-s3mock
+      S3_FORCE_PATH_STYLE: "true"
     steps:
       - name: Check out source
         uses: actions/checkout@v6
@@ -74,6 +90,9 @@ jobs:
         run: >-
           pnpm format:check && pnpm lint && pnpm typecheck && pnpm test &&
           pnpm test:db && pnpm audit:deps
+
+      - name: Validate local release configuration and recovery path
+        run: pnpm release:config:local && pnpm backup:smoke
 
       - name: Build production artifacts
         run: pnpm build

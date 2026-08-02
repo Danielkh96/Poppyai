@@ -12,7 +12,7 @@ export default function CanvasPrototypePage() {
   const graph = createCanvasFixture();
 
   return (
-    <main className="prototype-page">
+    <main className="prototype-page" id="main-content">
       <header className="prototype-header">
         <div className="prototype-header__identity">
           <Link href="/" aria-label="返回 M0 总览" className="icon-button">

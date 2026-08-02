@@ -16,6 +16,9 @@ export default defineConfig({
   timeout: 30_000,
   expect: { timeout: 8_000 },
   fullyParallel: false,
+  // All browser projects share one private-alpha workspace, whose product contract allows
+  // only one active AI run. Serial workers keep cross-browser release checks deterministic.
+  workers: 1,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "line",
   use: {

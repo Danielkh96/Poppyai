@@ -22,19 +22,20 @@ flowchart LR
     W -->|"SSE deltas; canonical refetch"| B
 ```
 
-## M4 implementation status
+## M5 implementation status
 
 This document describes the approved target architecture. Acceptance of an ADR is not a
 claim that its product path is already implemented.
 
-| Area                 | Present through M4                                                                                                                                                                                                                                 | Remaining hardening                                                           |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| Web/worker workspace | Runnable Next.js shell, authenticated Board/canvas/ingestion/chat routes, replayable SSE, signed-upload lifecycle, canonical polling/refetch UI, pg-boss ingestion worker, bounded retry, and structured privacy-safe events                       | Operational dashboards and release deployment checks in M5                    |
-| Tenant data boundary | Composite FKs, non-bypass roles, forced RLS, tenant transactions, scoped Board/canvas/ingestion/chat/snapshot/usage repositories, worker reauthorization functions, exact object-key checks, and cross-tenant integration tests                    | Broader adversarial authorization matrix and external audit in M5             |
-| Canvas               | Project-owned React Flow adapter; all Phase 1 node kinds; grouping, connections, outline, undo/redo, soft-delete restore, revisioned autosave, ingestion states, and grounded chat with frozen-citation inspection                                 | Narrow-layout manual accessibility review in M5                               |
-| Storage/ingestion    | S3 adapter and S3Mock path; PDF/TXT extraction; HTTPS webpage fetch with DNS/redirect revalidation and size/time bounds; official YouTube Data API public-metadata adapter; versioned artifacts, ordered segments, provenance, quotas, and cleanup | Real-S3 contract suite and production `YOUTUBE_API_KEY` before external alpha |
-| AI                   | Provider-neutral contract, deterministic fake, OpenAI Responses adapter, frozen manifests, fair budgeting, exact-lineage history, SSE/cancel/retry, citation validation, usage finalization, and reconciliation state                              | Approved live-provider evaluation corpus and production budget gate           |
-| Authentication       | Better Auth sessions, dedicated auth role, local test password flow, configurable Google OIDC and hashed magic links                                                                                                                               | Production provider credentials and delivery contract checks before alpha     |
+| Area                 | Present through M5                                                                                                                                                                                                                                   | External private-alpha gates                                                       |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Web/worker workspace | Runnable Next.js shell, authenticated Board/canvas/ingestion/chat routes, replayable SSE, signed-upload lifecycle, canonical polling/refetch UI, pg-boss ingestion worker, bounded retry, security headers, and accessible critical paths            | Approved deployment, native Edge/Safari and assistive-technology manual audit      |
+| Tenant data boundary | Composite FKs, non-bypass roles, forced RLS, tenant transactions, scoped Board/canvas/ingestion/chat/snapshot/usage/operations repositories, worker reauthorization, exact object-key checks, and adversarial cross-tenant integration/browser tests | External security review and production-role verification                          |
+| Canvas               | Project-owned React Flow adapter; all Phase 1 node kinds; grouping, connections, outline, undo/redo, soft-delete restore, revisioned autosave, ingestion states, grounded chat, frozen-citation inspection, and fixed performance fixture            | Supported-device manual interaction and accessibility sign-off                     |
+| Storage/ingestion    | S3 adapter and S3Mock path; PDF/TXT extraction; hardened HTTPS fetch; official YouTube public-metadata adapter; versioned artifacts, provenance, quotas, and cleanup                                                                                 | Real-S3 contract suite and production `YOUTUBE_API_KEY`                            |
+| AI                   | Provider-neutral contract, deterministic fake, OpenAI Responses adapter, frozen manifests, fair budgeting, exact-lineage history, SSE/cancel/retry, citation validation, usage finalization, reconciliation state, and usage anomaly signal          | Approved live-provider evaluation corpus, data terms, model, and production budget |
+| Operations/recovery  | Tenant-safe health page/API, save/queue/ingestion/generation/reconciliation/usage signals, release-config validator, backup/restore smoke, and P0 response notes                                                                                     | Alert delivery integration, production restore exercise, and formal SLOs           |
+| Authentication       | Better Auth sessions, dedicated auth role, local test password flow, configurable Google OIDC and hashed magic links                                                                                                                                 | Production provider credentials and delivery contract checks                       |
 
 ## Repository topology
 
@@ -97,7 +98,8 @@ persistent bidirectional channel.
 ## Persistence model
 
 PostgreSQL is canonical for users, workspaces, memberships, boards, graph state, assets,
-jobs, attempts, context manifests, messages, mutation receipts, and usage events. S3 is
+jobs, attempts, context manifests, messages, mutation receipts, usage events, and
+operational events. S3 is
 canonical only for authorized binary/large derived objects whose ownership and expected
 metadata are recorded in PostgreSQL.
 
@@ -160,9 +162,12 @@ bytes, token counts, queue age, and normalized error codes. They exclude source 
 prompts, responses, raw URLs, filenames when sensitive, session tokens, authorization
 headers, and signed URLs.
 
-Initial alerts cover suspected tenant leakage, save-failure rate, queue age/stuck leases,
-ingestion terminal failures, AI reconciliation backlog, duplicate usage constraints, and
-unusual quota spend.
+The authenticated operations view derives workspace-scoped signals for save failures,
+queue age/stuck ingestion jobs, ingestion and generation failures, AI reconciliation, and
+unusual run/token usage. Thresholds live in the shared domain package. The view and API are
+private/no-store and expose counts, age, alert code, and severity—not source or prompt
+content. Suspected tenant leakage and duplicate usage remain immediate P0 conditions even
+when a database uniqueness control prevents them from becoming a metric.
 
 ## Verification strategy
 
@@ -193,6 +198,12 @@ unusual quota spend.
   retry and reconciliation terminals; once-only canonical message/citation/usage
   finalization; provider-adapter contract tests; and a grounded stream/refetch/snapshot
   browser journey on Chromium, Firefox, and WebKit.
+- M5 evidence: tenant-scoped operational-event RLS and alert aggregation; release-config
+  validation; database backup/restore comparison; CSP and forged-origin checks; automated
+  WCAG A/AA scans and narrow-layout overflow checks; and one canonical source-to-answer,
+  edit, reload, delete/restore, archive/restore, and cross-tenant denial journey on
+  Chromium, Firefox, and WebKit. Production integrations and manual audits remain named
+  release gates rather than inferred from local fakes.
 
 ## Sources behind current technical choices
 

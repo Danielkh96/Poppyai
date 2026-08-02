@@ -79,6 +79,10 @@ export const providerAttemptStatus = pgEnum("provider_attempt_status", [
   "indeterminate",
   "cancelled"
 ]);
+export const operationalEventKind = pgEnum("operational_event_kind", [
+  "canvas_save_failed",
+  "canvas_save_conflict"
+]);
 
 export const authUsers = pgTable(
   "user",
@@ -941,6 +945,30 @@ export const chatRunEvents = pgTable(
     check(
       "chat_run_event_type_valid",
       sql`${table.type} IN ('started', 'delta', 'snapshot', 'completed', 'failed', 'cancelled', 'reconciliation_required')`
+    )
+  ]
+);
+
+export const operationalEvents = pgTable(
+  "operational_event",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id").notNull(),
+    boardId: uuid("board_id"),
+    kind: operationalEventKind("kind").notNull(),
+    errorCode: text("error_code").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index("operational_event_workspace_created_idx").on(table.workspaceId, table.createdAt),
+    foreignKey({
+      columns: [table.workspaceId, table.boardId],
+      foreignColumns: [boards.workspaceId, boards.id],
+      name: "operational_event_board_scope_fk"
+    }).onDelete("cascade"),
+    check(
+      "operational_event_error_code_format",
+      sql`${table.errorCode} ~ '^[A-Z][A-Z0-9_]{2,63}$'`
     )
   ]
 );

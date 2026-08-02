@@ -21,6 +21,9 @@
     "test:db": "corepack pnpm build:packages && dotenv -e .env -- vitest run --config vitest.integration.config.ts",
     "test:e2e": "corepack pnpm build:packages && dotenv -e .env -- corepack pnpm --filter @siftloom/web test:e2e",
     "benchmark:canvas": "corepack pnpm build:packages && dotenv -e .env -- corepack pnpm --filter @siftloom/web benchmark:canvas",
+    "backup:smoke": "dotenv -e .env -- node scripts/backup-restore-smoke.mjs",
+    "release:config": "dotenv -e .env -- node scripts/validate-release-config.mjs --profile=production",
+    "release:config:local": "dotenv -e .env -- node scripts/validate-release-config.mjs --profile=local",
     "audit:deps": "corepack pnpm audit --audit-level high",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -30,6 +33,7 @@
     "infra:down": "docker compose down"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.11.0",
     "@playwright/test": "1.62.1",
     "@tailwindcss/postcss": "4.3.3",
     "@testing-library/dom": "10.4.1",

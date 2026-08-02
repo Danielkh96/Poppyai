@@ -4,16 +4,14 @@ Siftloom is an original visual AI workspace for arranging sources on a canvas an
 producing grounded answers from explicitly connected context. The working product name
 still requires formal trademark clearance before public launch.
 
-## M4 status
+## M5 status
 
-M4 adds the grounded-chat vertical slice on top of identity, persistent canvas, and
-tenant-safe ingestion. A send reauthorizes only incoming or explicitly confirmed sources,
-freezes exact source versions in a context manifest, applies deterministic fair token
-budgeting, and persists the user message plus provider attempt before any model call.
-Creation and SSE subscription are separate; deltas are replayable but non-canonical, while
-one validated assistant message, cited snapshots, and append-only usage are finalized in a
-single transaction. Cancellation, safe retry, citation failure, source-change disclosure,
-and ambiguous paid outcomes have explicit terminal states.
+M5 hardens the complete identity, persistent-canvas, tenant-safe ingestion, and grounded-AI
+vertical slice for a private alpha. It adds a privacy-safe workspace operations view,
+release-configuration validation, backup/restore smoke testing, security and accessibility
+browser checks, a canonical cross-browser release scenario, and operator/privacy notes.
+Real provider, OAuth, S3, deployment, legal, and native assistive-technology approvals
+remain explicit external release gates; local evidence does not claim they are complete.
 
 ## Prerequisites
 
@@ -31,7 +29,7 @@ corepack pnpm db:migrate
 corepack pnpm dev
 ```
 
-Open <http://localhost:3000> and use <http://localhost:3000/sign-in> to enter the M4
+Open <http://localhost:3000> and use <http://localhost:3000/sign-in> to enter the M5
 workspace. The M0 canvas fixture remains available at
 <http://localhost:3000/prototype/canvas>.
 
@@ -65,6 +63,8 @@ corepack pnpm typecheck
 corepack pnpm test
 corepack pnpm test:db
 corepack pnpm audit:deps
+corepack pnpm release:config:local
+corepack pnpm backup:smoke
 corepack pnpm build
 corepack pnpm test:e2e
 ```
@@ -82,4 +82,4 @@ The canonical requirements are in
 [`docs/m0/decision-register.md`](docs/m0/decision-register.md) for the decisions that
 are ready for implementation and the owner approvals still needed to close M0.
 Local evidence and remaining external gates are recorded in
-[`docs/m4/verification.md`](docs/m4/verification.md).
+[`docs/m5/verification.md`](docs/m5/verification.md).
