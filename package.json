@@ -17,7 +17,7 @@
     "build": "dotenv -e .env -- corepack pnpm -r build",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "corepack pnpm -r typecheck",
-    "test": "vitest run",
+    "test": "corepack pnpm build:packages && vitest run",
     "test:db": "corepack pnpm build:packages && dotenv -e .env -- vitest run --config vitest.integration.config.ts",
     "test:e2e": "corepack pnpm build:packages && dotenv -e .env -- corepack pnpm --filter @siftloom/web test:e2e",
     "benchmark:canvas": "corepack pnpm build:packages && dotenv -e .env -- corepack pnpm --filter @siftloom/web benchmark:canvas",
