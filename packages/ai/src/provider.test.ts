@@ -10,6 +10,7 @@ describe("FakeAiProvider", () => {
     for await (const event of provider.stream({
       runId: "run-1",
       userPrompt: "summarize",
+      history: [],
       context: [
         {
           snapshotId: "snapshot-1",

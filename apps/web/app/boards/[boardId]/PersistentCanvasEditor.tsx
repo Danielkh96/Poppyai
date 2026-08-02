@@ -39,6 +39,8 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { ChatInspector } from "./ChatInspector";
+
 type SaveState = "saved" | "dirty" | "saving" | "failed" | "conflict";
 type SourceActionState = "idle" | "uploading" | "submitting" | "retrying";
 
@@ -1138,14 +1140,25 @@ export function PersistentCanvasEditor({
           </div>
         </div>
 
-        <aside className="m2-inspector" aria-label="节点属性">
+        <aside
+          className={`m2-inspector${selectedNode?.kind === "chat" ? " is-chat" : ""}`}
+          aria-label="节点属性"
+        >
           <div className="m2-panel-heading">
             <div>
               <span className="eyebrow">Inspector</span>
               <strong>{selectedNode ? KIND_LABELS[selectedNode.kind] : "未选择"}</strong>
             </div>
           </div>
-          {selectedNode ? (
+          {selectedNode?.payload.kind === "chat" ? (
+            <ChatInspector
+              key={selectedNode.id}
+              boardId={boardId}
+              node={selectedNode as CanvasNode & { payload: { kind: "chat" } }}
+              graph={displayGraph}
+              canRun={saveState === "saved"}
+            />
+          ) : selectedNode ? (
             <div className="m2-fields">
               <label>
                 标题
@@ -1288,15 +1301,6 @@ export function PersistentCanvasEditor({
                     </button>
                   ) : null}
                 </div>
-              ) : null}
-              {selectedNode.payload.kind === "chat" ? (
-                <label>
-                  对话提示
-                  <textarea
-                    value={selectedNode.payload.prompt}
-                    onChange={(event) => updateKindPayload("prompt", event.target.value)}
-                  />
-                </label>
               ) : null}
               {selectedNode.payload.kind === "group" ? (
                 <label>

@@ -260,7 +260,7 @@ async function applyNodeUpsert(
         id: node.id,
         workspaceId: scope.workspaceId,
         boardId,
-        parentNodeId: null,
+        parentNodeId: node.parentId,
         kind: node.kind,
         x: node.position.x,
         y: node.position.y,
@@ -280,7 +280,7 @@ async function applyNodeUpsert(
   const changed = await transaction
     .update(nodes)
     .set({
-      parentNodeId: null,
+      parentNodeId: node.parentId,
       kind: node.kind,
       x: node.position.x,
       y: node.position.y,

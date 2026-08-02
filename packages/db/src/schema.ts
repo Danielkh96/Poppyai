@@ -62,6 +62,23 @@ export const ingestionAttemptStage = pgEnum("ingestion_attempt_stage", [
   "normalizing",
   "storing"
 ]);
+export const chatRunStatus = pgEnum("chat_run_status", [
+  "queued",
+  "running",
+  "completed",
+  "cancelled",
+  "failed",
+  "reconciliation_required"
+]);
+export const chatMessageRole = pgEnum("chat_message_role", ["user", "assistant"]);
+export const providerAttemptStatus = pgEnum("provider_attempt_status", [
+  "pending",
+  "running",
+  "succeeded",
+  "failed",
+  "indeterminate",
+  "cancelled"
+]);
 
 export const authUsers = pgTable(
   "user",
@@ -559,5 +576,371 @@ export const extractionSegments = pgTable(
     }).onDelete("cascade"),
     check("extraction_segment_ordinal_nonnegative", sql`${table.ordinal} >= 0`),
     check("extraction_segment_text_not_empty", sql`char_length(${table.text}) > 0`)
+  ]
+);
+
+export const chats = pgTable(
+  "chat",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id").notNull(),
+    boardId: uuid("board_id").notNull(),
+    nodeId: uuid("node_id").notNull(),
+    nextMessageSequence: bigint("next_message_sequence", { mode: "number" })
+      .notNull()
+      .default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("chat_workspace_board_id_unique").on(
+      table.workspaceId,
+      table.boardId,
+      table.id
+    ),
+    uniqueIndex("chat_workspace_board_node_unique").on(
+      table.workspaceId,
+      table.boardId,
+      table.nodeId
+    ),
+    foreignKey({
+      columns: [table.workspaceId, table.boardId, table.nodeId],
+      foreignColumns: [nodes.workspaceId, nodes.boardId, nodes.id],
+      name: "chat_node_scope_fk"
+    }).onDelete("cascade"),
+    check("chat_next_sequence_nonnegative", sql`${table.nextMessageSequence} >= 0`)
+  ]
+);
+
+export const chatRuns = pgTable(
+  "chat_run",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id").notNull(),
+    boardId: uuid("board_id").notNull(),
+    chatId: uuid("chat_id").notNull(),
+    mutationId: uuid("mutation_id").notNull(),
+    requestHash: text("request_hash").notNull().default(""),
+    retryOfRunId: uuid("retry_of_run_id"),
+    status: chatRunStatus("status").notNull().default("queued"),
+    providerName: text("provider_name").notNull(),
+    model: text("model").notNull(),
+    streamedText: text("streamed_text").notNull().default(""),
+    streamSequence: bigint("stream_sequence", { mode: "number" }).notNull().default(0),
+    cancellationRequestedAt: timestamp("cancellation_requested_at", {
+      withTimezone: true
+    }),
+    errorCode: text("error_code"),
+    errorMessage: text("error_message"),
+    retryable: boolean("retryable").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("chat_run_workspace_board_id_unique").on(
+      table.workspaceId,
+      table.boardId,
+      table.id
+    ),
+    uniqueIndex("chat_run_workspace_mutation_unique").on(
+      table.workspaceId,
+      table.mutationId
+    ),
+    uniqueIndex("chat_run_one_active_per_chat_unique")
+      .on(table.workspaceId, table.chatId)
+      .where(sql`${table.status} IN ('queued', 'running')`),
+    uniqueIndex("chat_run_one_active_per_workspace_unique")
+      .on(table.workspaceId)
+      .where(sql`${table.status} IN ('queued', 'running')`),
+    index("chat_run_chat_created_idx").on(table.workspaceId, table.chatId, table.createdAt),
+    foreignKey({
+      columns: [table.workspaceId, table.boardId, table.chatId],
+      foreignColumns: [chats.workspaceId, chats.boardId, chats.id],
+      name: "chat_run_chat_scope_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.workspaceId, table.boardId, table.retryOfRunId],
+      foreignColumns: [table.workspaceId, table.boardId, table.id],
+      name: "chat_run_retry_scope_fk"
+    }),
+    check("chat_run_sequence_nonnegative", sql`${table.streamSequence} >= 0`),
+    check(
+      "chat_run_terminal_finished",
+      sql`${table.status} NOT IN ('completed', 'cancelled', 'failed', 'reconciliation_required') OR ${table.finishedAt} IS NOT NULL`
+    )
+  ]
+);
+
+export const chatMessages = pgTable(
+  "chat_message",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id").notNull(),
+    boardId: uuid("board_id").notNull(),
+    chatId: uuid("chat_id").notNull(),
+    runId: uuid("run_id").notNull(),
+    role: chatMessageRole("role").notNull(),
+    sequence: bigint("sequence", { mode: "number" }).notNull(),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("chat_message_workspace_board_id_unique").on(
+      table.workspaceId,
+      table.boardId,
+      table.id
+    ),
+    uniqueIndex("chat_message_chat_sequence_unique").on(
+      table.workspaceId,
+      table.chatId,
+      table.sequence
+    ),
+    uniqueIndex("chat_message_assistant_run_unique")
+      .on(table.runId)
+      .where(sql`${table.role} = 'assistant'`),
+    foreignKey({
+      columns: [table.workspaceId, table.boardId, table.chatId],
+      foreignColumns: [chats.workspaceId, chats.boardId, chats.id],
+      name: "chat_message_chat_scope_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.workspaceId, table.boardId, table.runId],
+      foreignColumns: [chatRuns.workspaceId, chatRuns.boardId, chatRuns.id],
+      name: "chat_message_run_scope_fk"
+    }).onDelete("cascade"),
+    check("chat_message_sequence_nonnegative", sql`${table.sequence} >= 0`),
+    check("chat_message_content_not_empty", sql`char_length(${table.content}) > 0`)
+  ]
+);
+
+export const contextManifests = pgTable(
+  "context_manifest",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id").notNull(),
+    boardId: uuid("board_id").notNull(),
+    runId: uuid("run_id").notNull(),
+    scopeHash: text("scope_hash").notNull(),
+    sourceTokens: integer("source_tokens").notNull(),
+    historyTokens: integer("history_tokens").notNull(),
+    outputReserveTokens: integer("output_reserve_tokens").notNull(),
+    includedHistoryMessageIds: jsonb("included_history_message_ids")
+      .$type<string[]>()
+      .notNull()
+      .default([]),
+    exclusions: jsonb("exclusions")
+      .$type<Array<{ nodeId: string | null; title: string; reason: string }>>()
+      .notNull()
+      .default([]),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("context_manifest_workspace_board_id_unique").on(
+      table.workspaceId,
+      table.boardId,
+      table.id
+    ),
+    uniqueIndex("context_manifest_run_unique").on(table.runId),
+    foreignKey({
+      columns: [table.workspaceId, table.boardId, table.runId],
+      foreignColumns: [chatRuns.workspaceId, chatRuns.boardId, chatRuns.id],
+      name: "context_manifest_run_scope_fk"
+    }).onDelete("cascade"),
+    check("context_manifest_source_tokens_nonnegative", sql`${table.sourceTokens} >= 0`),
+    check("context_manifest_history_tokens_nonnegative", sql`${table.historyTokens} >= 0`),
+    check("context_manifest_output_tokens_positive", sql`${table.outputReserveTokens} > 0`)
+  ]
+);
+
+export const contextSourceSnapshots = pgTable(
+  "context_source_snapshot",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id").notNull(),
+    boardId: uuid("board_id").notNull(),
+    manifestId: uuid("manifest_id").notNull(),
+    runId: uuid("run_id").notNull(),
+    nodeId: uuid("node_id").notNull(),
+    nodeRevision: bigint("node_revision", { mode: "number" }).notNull(),
+    sourceHandle: text("source_handle").notNull(),
+    title: text("title").notNull(),
+    sourceKind: canvasNodeKind("source_kind").notNull(),
+    exactText: text("exact_text").notNull(),
+    contentHash: text("content_hash").notNull(),
+    artifactId: uuid("artifact_id"),
+    artifactVersion: integer("artifact_version"),
+    segmentIds: jsonb("segment_ids").$type<string[]>().notNull().default([]),
+    truncated: boolean("truncated").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("context_snapshot_workspace_board_id_unique").on(
+      table.workspaceId,
+      table.boardId,
+      table.id
+    ),
+    uniqueIndex("context_snapshot_run_handle_unique").on(table.runId, table.sourceHandle),
+    foreignKey({
+      columns: [table.workspaceId, table.boardId, table.manifestId],
+      foreignColumns: [
+        contextManifests.workspaceId,
+        contextManifests.boardId,
+        contextManifests.id
+      ],
+      name: "context_snapshot_manifest_scope_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.workspaceId, table.boardId, table.runId],
+      foreignColumns: [chatRuns.workspaceId, chatRuns.boardId, chatRuns.id],
+      name: "context_snapshot_run_scope_fk"
+    }).onDelete("cascade"),
+    check("context_snapshot_revision_nonnegative", sql`${table.nodeRevision} >= 0`),
+    check("context_snapshot_text_not_empty", sql`char_length(${table.exactText}) > 0`),
+    check("context_snapshot_handle_format", sql`${table.sourceHandle} ~ '^S[1-9][0-9]*$'`)
+  ]
+);
+
+export const chatMessageSources = pgTable(
+  "chat_message_source",
+  {
+    workspaceId: uuid("workspace_id").notNull(),
+    boardId: uuid("board_id").notNull(),
+    messageId: uuid("message_id").notNull(),
+    snapshotId: uuid("snapshot_id").notNull(),
+    sourceHandle: text("source_handle").notNull(),
+    ordinal: integer("ordinal").notNull()
+  },
+  (table) => [
+    primaryKey({ columns: [table.messageId, table.snapshotId] }),
+    uniqueIndex("chat_message_source_handle_unique").on(
+      table.messageId,
+      table.sourceHandle
+    ),
+    foreignKey({
+      columns: [table.workspaceId, table.boardId, table.messageId],
+      foreignColumns: [chatMessages.workspaceId, chatMessages.boardId, chatMessages.id],
+      name: "chat_message_source_message_scope_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.workspaceId, table.boardId, table.snapshotId],
+      foreignColumns: [
+        contextSourceSnapshots.workspaceId,
+        contextSourceSnapshots.boardId,
+        contextSourceSnapshots.id
+      ],
+      name: "chat_message_source_snapshot_scope_fk"
+    }).onDelete("cascade"),
+    check("chat_message_source_ordinal_nonnegative", sql`${table.ordinal} >= 0`)
+  ]
+);
+
+export const providerAttempts = pgTable(
+  "provider_attempt",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id").notNull(),
+    boardId: uuid("board_id").notNull(),
+    runId: uuid("run_id").notNull(),
+    idempotencyKey: text("idempotency_key").notNull(),
+    providerName: text("provider_name").notNull(),
+    model: text("model").notNull(),
+    status: providerAttemptStatus("status").notNull().default("pending"),
+    providerRequestId: text("provider_request_id"),
+    inputTokens: integer("input_tokens"),
+    cachedInputTokens: integer("cached_input_tokens"),
+    outputTokens: integer("output_tokens"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    finishedAt: timestamp("finished_at", { withTimezone: true })
+  },
+  (table) => [
+    uniqueIndex("provider_attempt_workspace_board_id_unique").on(
+      table.workspaceId,
+      table.boardId,
+      table.id
+    ),
+    uniqueIndex("provider_attempt_run_unique").on(table.runId),
+    uniqueIndex("provider_attempt_idempotency_unique").on(
+      table.providerName,
+      table.idempotencyKey
+    ),
+    foreignKey({
+      columns: [table.workspaceId, table.boardId, table.runId],
+      foreignColumns: [chatRuns.workspaceId, chatRuns.boardId, chatRuns.id],
+      name: "provider_attempt_run_scope_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const usageEvents = pgTable(
+  "usage_event",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id").notNull(),
+    boardId: uuid("board_id").notNull(),
+    runId: uuid("run_id").notNull(),
+    providerAttemptId: uuid("provider_attempt_id").notNull(),
+    idempotencyKey: text("idempotency_key").notNull(),
+    inputTokens: integer("input_tokens").notNull(),
+    cachedInputTokens: integer("cached_input_tokens").notNull(),
+    outputTokens: integer("output_tokens").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("usage_event_workspace_board_id_unique").on(
+      table.workspaceId,
+      table.boardId,
+      table.id
+    ),
+    uniqueIndex("usage_event_idempotency_unique").on(
+      table.workspaceId,
+      table.idempotencyKey
+    ),
+    uniqueIndex("usage_event_run_unique").on(table.runId),
+    foreignKey({
+      columns: [table.workspaceId, table.boardId, table.runId],
+      foreignColumns: [chatRuns.workspaceId, chatRuns.boardId, chatRuns.id],
+      name: "usage_event_run_scope_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.workspaceId, table.boardId, table.providerAttemptId],
+      foreignColumns: [
+        providerAttempts.workspaceId,
+        providerAttempts.boardId,
+        providerAttempts.id
+      ],
+      name: "usage_event_attempt_scope_fk"
+    }).onDelete("cascade"),
+    check("usage_input_tokens_nonnegative", sql`${table.inputTokens} >= 0`),
+    check("usage_cached_tokens_nonnegative", sql`${table.cachedInputTokens} >= 0`),
+    check("usage_output_tokens_nonnegative", sql`${table.outputTokens} >= 0`)
+  ]
+);
+
+export const chatRunEvents = pgTable(
+  "chat_run_event",
+  {
+    workspaceId: uuid("workspace_id").notNull(),
+    boardId: uuid("board_id").notNull(),
+    runId: uuid("run_id").notNull(),
+    sequence: bigint("sequence", { mode: "number" }).notNull(),
+    type: text("type").notNull(),
+    data: jsonb("data").$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    primaryKey({ columns: [table.runId, table.sequence] }),
+    foreignKey({
+      columns: [table.workspaceId, table.boardId, table.runId],
+      foreignColumns: [chatRuns.workspaceId, chatRuns.boardId, chatRuns.id],
+      name: "chat_run_event_run_scope_fk"
+    }).onDelete("cascade"),
+    check("chat_run_event_sequence_positive", sql`${table.sequence} > 0`),
+    check(
+      "chat_run_event_type_valid",
+      sql`${table.type} IN ('started', 'delta', 'snapshot', 'completed', 'failed', 'cancelled', 'reconciliation_required')`
+    )
   ]
 );

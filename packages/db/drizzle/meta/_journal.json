@@ -50,6 +50,34 @@
       "when": 1785595206295,
       "tag": "0006_ingestion_cleanup",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1785635924519,
+      "tag": "0007_flowery_james_howlett",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1785636695204,
+      "tag": "0008_glorious_mandarin",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1785637053763,
+      "tag": "0009_quick_ogun",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1785637828350,
+      "tag": "0010_restrict_chat_grants",
+      "breakpoints": true
     }
   ]
 }

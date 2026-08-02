@@ -84,6 +84,9 @@ importers:
 
   apps/web:
     dependencies:
+      "@siftloom/ai":
+        specifier: workspace:*
+        version: link:../../packages/ai
       "@siftloom/db":
         specifier: workspace:*
         version: link:../../packages/db
@@ -144,6 +147,9 @@ importers:
 
   packages/db:
     dependencies:
+      "@siftloom/ai":
+        specifier: workspace:*
+        version: link:../ai
       "@siftloom/shared":
         specifier: workspace:*
         version: link:../shared

@@ -16,6 +16,7 @@
     "db:migrate": "tsx --env-file-if-exists=../../.env src/migrate.ts"
   },
   "dependencies": {
+    "@siftloom/ai": "workspace:*",
     "@siftloom/shared": "workspace:*",
     "drizzle-orm": "0.45.2",
     "pg-boss": "12.26.4",

@@ -19,7 +19,7 @@ test("health route is private-content free", async ({ request }) => {
   await expect(response.json()).resolves.toEqual({
     status: "ok",
     service: "siftloom-web",
-    milestone: "M1",
+    milestone: "M4",
     time: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/)
   });
 });

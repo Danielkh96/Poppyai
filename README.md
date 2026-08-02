@@ -4,15 +4,16 @@ Siftloom is an original visual AI workspace for arranging sources on a canvas an
 producing grounded answers from explicitly connected context. The working product name
 still requires formal trademark clearance before public launch.
 
-## M3 status
+## M4 status
 
-M3 adds the tenant-safe ingestion vertical slice on top of the M1 identity/Board and M2
-persistent-canvas foundations. PDF and UTF-8 text files use exact-object signed uploads;
-public webpages use a bounded SSRF-resistant fetch boundary; and configured public
-YouTube URLs use the official Data API for metadata only. A durable pg-boss worker stores
-immutable attempts, versioned extraction artifacts, ordered provenance-bearing segments,
-warnings, failures, bounded retries, stale-lease replacement, and orphan-upload cleanup.
-The canvas polls canonical status without writing worker progress into canvas history.
+M4 adds the grounded-chat vertical slice on top of identity, persistent canvas, and
+tenant-safe ingestion. A send reauthorizes only incoming or explicitly confirmed sources,
+freezes exact source versions in a context manifest, applies deterministic fair token
+budgeting, and persists the user message plus provider attempt before any model call.
+Creation and SSE subscription are separate; deltas are replayable but non-canonical, while
+one validated assistant message, cited snapshots, and append-only usage are finalized in a
+single transaction. Cancellation, safe retry, citation failure, source-change disclosure,
+and ambiguous paid outcomes have explicit terminal states.
 
 ## Prerequisites
 
@@ -30,7 +31,7 @@ corepack pnpm db:migrate
 corepack pnpm dev
 ```
 
-Open <http://localhost:3000> and use <http://localhost:3000/sign-in> to enter the M3
+Open <http://localhost:3000> and use <http://localhost:3000/sign-in> to enter the M4
 workspace. The M0 canvas fixture remains available at
 <http://localhost:3000/prototype/canvas>.
 
@@ -48,6 +49,12 @@ Set `YOUTUBE_API_KEY` to enable public YouTube metadata ingestion. Siftloom neve
 downloads video bytes or scrapes restricted transcripts; when a transcript is unavailable,
 the UI keeps the metadata result with a warning and suggests uploading a rights-cleared
 UTF-8 transcript as a separate file source.
+
+Local development and all automated tests use `AI_PROVIDER=fake` and make no paid model
+calls. To evaluate the current server-side OpenAI Responses adapter, separately authorize
+a budget/data-processing configuration, then set `AI_PROVIDER=openai`, `OPENAI_API_KEY`,
+and an approved `OPENAI_MODEL`. Provider keys and privileged grounding instructions never
+enter browser code.
 
 ## Required root checks
 
@@ -75,4 +82,4 @@ The canonical requirements are in
 [`docs/m0/decision-register.md`](docs/m0/decision-register.md) for the decisions that
 are ready for implementation and the owner approvals still needed to close M0.
 Local evidence and remaining external gates are recorded in
-[`docs/m0/verification.md`](docs/m0/verification.md).
+[`docs/m4/verification.md`](docs/m4/verification.md).

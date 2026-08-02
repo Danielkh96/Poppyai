@@ -1,0 +1,2 @@
+ALTER TABLE "chat_run" ADD COLUMN "request_hash" text DEFAULT '' NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "chat_run_one_active_per_workspace_unique" ON "chat_run" USING btree ("workspace_id") WHERE "chat_run"."status" IN ('queued', 'running');
