@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test as setup, type Browser } from "@playwright/test";
 
 import { primaryAuthState, supportAuthState } from "./auth-state";
@@ -9,10 +10,22 @@ async function createLocalAccount(browser: Browser, label: string, statePath: st
   const identity = `${emailLabel}-${crypto.randomUUID()}@example.test`;
 
   await page.goto("/sign-in");
+  await expect(page.getByRole("heading", { name: "登录 Siftloom" })).toBeVisible();
+  await expect(page.getByText("使用你的 Siftloom 账号登录")).toBeVisible();
+  const accessibility = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa"])
+    .analyze();
+  expect(
+    accessibility.violations,
+    accessibility.violations
+      .map((violation) => `${violation.id}: ${violation.help}`)
+      .join("\n")
+  ).toEqual([]);
+  await page.getByRole("button", { name: "创建账号" }).click();
   await page.getByLabel("昵称").fill(label);
   await page.getByLabel("邮箱").fill(identity);
   await page.getByLabel("密码").fill("local-test-password-2026");
-  await page.getByRole("button", { name: "创建并进入工作区" }).click();
+  await page.getByRole("button", { name: "创建账号", exact: true }).click();
   await expect(page).toHaveURL(/\/boards$/);
   await expect(page.getByRole("heading", { name: "你的 Boards" })).toBeVisible();
   await context.storageState({ path: statePath });

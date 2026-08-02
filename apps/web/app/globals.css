@@ -98,67 +98,70 @@ button:disabled {
 
 .auth-page {
   min-height: 100vh;
-  display: grid;
-  grid-template-columns: minmax(360px, 1fr) minmax(430px, 0.72fr);
-}
-
-.auth-story {
-  min-height: 100vh;
-  padding: clamp(32px, 5vw, 74px);
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  border-right: 1px solid var(--line);
-  background:
-    linear-gradient(135deg, transparent 55%, rgb(23 70 209 / 6%)),
-    repeating-linear-gradient(0deg, transparent 0 39px, rgb(23 28 26 / 4%) 40px);
-}
-
-.auth-story h1 {
-  max-width: 680px;
-  margin: 20px 0;
-  font: 500 clamp(52px, 7vw, 96px) / 0.95 var(--serif);
-  letter-spacing: -0.06em;
-}
-
-.auth-story p {
-  max-width: 580px;
-  color: var(--ink-muted);
-  font-size: 17px;
-  line-height: 1.75;
-}
-
-.auth-story small {
-  color: var(--ink-muted);
-  font: 600 11px/1 var(--mono);
-  letter-spacing: 0.08em;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+  background: #f7f7f9;
 }
 
 .auth-card {
-  width: min(520px, calc(100% - 48px));
-  margin: auto;
-  padding: 38px;
-  background: var(--paper-raised);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  box-shadow: var(--shadow);
+  width: min(402px, 100%);
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #e9e9ee;
+  border-radius: 14px;
+  box-shadow: 0 18px 50px rgb(37 39 55 / 13%);
 }
 
-.auth-card__index {
-  color: var(--cobalt);
-  font: 700 10px/1 var(--mono);
-  letter-spacing: 0.12em;
+.auth-card__notice {
+  min-height: 48px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 18px;
+  background: #f0f4ff;
+  color: #3154ad;
+  font-size: 13px;
+  font-weight: 650;
 }
 
-.auth-card h2 {
-  margin: 24px 0 8px;
-  font: 500 38px/1.1 var(--serif);
-  letter-spacing: -0.04em;
+.auth-card__content {
+  padding: 34px 30px 28px;
 }
 
-.auth-card > p,
-.local-auth-note {
-  color: var(--ink-muted);
+.auth-brand {
+  width: 50px;
+  height: 50px;
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 15px;
+  background: linear-gradient(145deg, #5d5ce8, #4343d3);
+  color: #fff;
+  box-shadow: 0 9px 20px rgb(67 67 211 / 24%);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.auth-card__header {
+  margin: 20px 0 28px;
+  text-align: center;
+}
+
+.auth-card__header h1 {
+  margin: 0;
+  color: #20202a;
+  font-size: 22px;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+}
+
+.auth-card__header p {
+  margin: 8px 0 0;
+  color: #73737f;
+  font-size: 14px;
 }
 
 .auth-provider,
@@ -169,19 +172,27 @@ button:disabled {
   align-items: center;
   justify-content: center;
   gap: 9px;
-  border: 0;
-  border-radius: 9px;
+  border-radius: 7px;
   cursor: pointer;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 650;
 }
 
 .auth-provider {
-  background: var(--ink);
-  color: white;
+  border: 1px solid #dedee5;
+  background: #fff;
+  color: #35353f;
+  box-shadow: 0 1px 2px rgb(20 20 30 / 4%);
+}
+
+.auth-provider__mark {
+  color: #4285f4;
+  font-size: 17px;
+  font-weight: 800;
 }
 
 .auth-divider {
-  margin: 24px 0;
+  margin: 22px 0;
   display: flex;
   align-items: center;
   color: var(--ink-muted);
@@ -193,65 +204,45 @@ button:disabled {
   height: 1px;
   flex: 1;
   content: "";
-  background: var(--line);
+  background: #e8e8ed;
 }
 
 .auth-divider span {
   padding: 0 12px;
 }
 
-.auth-tabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  margin: 26px 0 20px;
-  padding: 3px;
-  background: #eae6dc;
-  border-radius: 9px;
-}
-
-.auth-tabs button {
-  padding: 9px;
-  border: 0;
-  border-radius: 7px;
-  background: transparent;
-  cursor: pointer;
-  font-size: 13px;
-}
-
-.auth-tabs button[aria-pressed="true"] {
-  background: white;
-  box-shadow: 0 2px 9px rgb(28 25 18 / 8%);
-  font-weight: 700;
-}
-
 .auth-form {
   display: grid;
-  gap: 16px;
+  gap: 15px;
 }
 
 .auth-form label,
 .create-board label {
   display: grid;
   gap: 7px;
-  color: var(--ink-muted);
-  font-size: 12px;
-  font-weight: 650;
+  color: #34343d;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .auth-form input,
 .create-board input {
   width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  min-height: 46px;
+  border: 1px solid #d9d9e0;
+  border-radius: 6px;
   background: white;
   color: var(--ink);
-  padding: 13px 14px;
+  padding: 11px 13px;
+  font-size: 14px;
 }
 
 .auth-submit {
-  margin-top: 4px;
-  background: var(--cobalt);
+  margin-top: 5px;
+  border: 0;
+  background: linear-gradient(90deg, #5654e8, #654cde);
   color: white;
+  box-shadow: 0 7px 16px rgb(86 84 232 / 22%);
 }
 
 .form-message,
@@ -273,10 +264,36 @@ button:disabled {
   margin: 0;
 }
 
-.local-auth-note {
-  margin: 16px 0 0;
+.auth-mode-switch {
+  margin: 24px 0 0;
+  text-align: center;
+  color: #6f6f79;
+  font-size: 13px;
+}
+
+.auth-mode-switch button {
+  margin-left: 5px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #514bd7;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.auth-legal {
+  max-width: 290px;
+  margin: 40px auto 0;
+  color: #6f6f79;
+  text-align: center;
   font-size: 11px;
-  line-height: 1.5;
+  line-height: 1.6;
+}
+
+.auth-legal a {
+  color: #60606b;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .workspace-page {
@@ -882,24 +899,6 @@ button:disabled {
 }
 
 @media (max-width: 900px) {
-  .auth-page {
-    grid-template-columns: 1fr;
-  }
-
-  .auth-story {
-    min-height: 45vh;
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
-  }
-
-  .auth-story small {
-    display: none;
-  }
-
-  .auth-card {
-    margin: 52px auto;
-  }
-
   .board-app-shell {
     grid-template-columns: 190px minmax(0, 1fr);
   }
@@ -924,16 +923,18 @@ button:disabled {
 }
 
 @media (max-width: 620px) {
-  .auth-story {
-    min-height: 380px;
-  }
-
-  .auth-story h1 {
-    font-size: 52px;
+  .auth-page {
+    align-items: flex-start;
+    padding: 14px;
   }
 
   .auth-card {
-    padding: 26px;
+    margin: 0 auto;
+    border-radius: 12px;
+  }
+
+  .auth-card__content {
+    padding: 30px 22px 24px;
   }
 
   .workspace-owner small {

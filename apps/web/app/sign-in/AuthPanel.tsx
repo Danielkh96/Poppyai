@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, KeyRound, LoaderCircle, Mail } from "lucide-react";
+import { ArrowRight, KeyRound, LoaderCircle } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 import { authClient } from "@/lib/auth-client";
@@ -21,7 +21,7 @@ export function AuthPanel({ capabilities }: AuthPanelProps) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
-  const [passwordMode, setPasswordMode] = useState<PasswordMode>("sign-up");
+  const [passwordMode, setPasswordMode] = useState<PasswordMode>("sign-in");
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -81,32 +81,16 @@ export function AuthPanel({ capabilities }: AuthPanelProps) {
             void authClient.signIn.social({ provider: "google", callbackURL: "/boards" })
           }
         >
-          使用 Google 继续 <ArrowRight size={16} />
+          <span className="auth-provider__mark" aria-hidden="true">
+            G
+          </span>
+          使用 Google 继续
         </button>
       ) : null}
 
       {(capabilities.magicLink || capabilities.password) && capabilities.google ? (
         <div className="auth-divider">
           <span>或</span>
-        </div>
-      ) : null}
-
-      {capabilities.password ? (
-        <div className="auth-tabs" role="group" aria-label="本地认证方式">
-          <button
-            type="button"
-            aria-pressed={passwordMode === "sign-up"}
-            onClick={() => setPasswordMode("sign-up")}
-          >
-            创建账号
-          </button>
-          <button
-            type="button"
-            aria-pressed={passwordMode === "sign-in"}
-            onClick={() => setPasswordMode("sign-in")}
-          >
-            密码登录
-          </button>
         </div>
       ) : null}
 
@@ -125,14 +109,14 @@ export function AuthPanel({ capabilities }: AuthPanelProps) {
             </label>
           ) : null}
           <label>
-            邮箱
+            邮箱地址
             <input
               required
               type="email"
               autoComplete="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="you@example.com"
+              placeholder="输入邮箱地址"
             />
           </label>
           {capabilities.password ? (
@@ -157,14 +141,29 @@ export function AuthPanel({ capabilities }: AuthPanelProps) {
             disabled={!interactive || pending}
             suppressHydrationWarning
           >
-            {pending ? <LoaderCircle className="spin" size={17} /> : <Mail size={17} />}
+            {pending ? <LoaderCircle className="spin" size={17} /> : null}
             {capabilities.password
               ? passwordMode === "sign-up"
-                ? "创建并进入工作区"
-                : "登录"
-              : "发送登录链接"}
+                ? "创建账号"
+                : "继续"
+              : "使用邮箱继续"}
+            {!pending ? <ArrowRight size={15} /> : null}
           </button>
         </form>
+      ) : null}
+
+      {capabilities.password ? (
+        <p className="auth-mode-switch">
+          {passwordMode === "sign-in" ? "还没有账号？" : "已经有账号？"}
+          <button
+            type="button"
+            onClick={() =>
+              setPasswordMode((current) => (current === "sign-in" ? "sign-up" : "sign-in"))
+            }
+          >
+            {passwordMode === "sign-in" ? "创建账号" : "返回登录"}
+          </button>
+        </p>
       ) : null}
 
       {noMethod ? (
@@ -178,9 +177,6 @@ export function AuthPanel({ capabilities }: AuthPanelProps) {
         <p className="form-message" role="status">
           {message}
         </p>
-      ) : null}
-      {capabilities.password ? (
-        <p className="local-auth-note">密码认证仅在本地开发和自动化测试中启用。</p>
       ) : null}
     </div>
   );

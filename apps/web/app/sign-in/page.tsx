@@ -1,3 +1,4 @@
+import { Info } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -13,25 +14,23 @@ export default async function SignInPage() {
 
   return (
     <main className="auth-page" id="main-content">
-      <section className="auth-story">
-        <Link href="/" className="wordmark" aria-label="Siftloom 首页">
-          <span className="brand-mark" aria-hidden="true">
-            S
-          </span>
-          <span>Siftloom</span>
-        </Link>
-        <div>
-          <span className="eyebrow">Your research, in context</span>
-          <h1>回到你的视觉工作区。</h1>
-          <p>Board、来源与生成结果都留在各自的租户边界内，并由服务端逐次验证会话。</p>
-        </div>
-        <small>M1 · Identity & board lifecycle</small>
-      </section>
       <section className="auth-card" aria-labelledby="sign-in-title">
-        <span className="auth-card__index">01 / ACCESS</span>
-        <h2 id="sign-in-title">登录 Siftloom</h2>
-        <p>继续整理来源，或创建第一个 Board。</p>
-        <AuthPanel capabilities={authCapabilities} />
+        <p className="auth-card__notice">
+          <Info size={15} aria-hidden="true" /> 使用你的 Siftloom 账号登录
+        </p>
+        <div className="auth-card__content">
+          <Link href="/" className="auth-brand" aria-label="Siftloom 首页">
+            <span aria-hidden="true">S</span>
+          </Link>
+          <header className="auth-card__header">
+            <h1 id="sign-in-title">登录 Siftloom</h1>
+            <p>欢迎回来，请登录以继续。</p>
+          </header>
+          <AuthPanel capabilities={authCapabilities} />
+          <p className="auth-legal">
+            继续即表示你同意 Siftloom 的<Link href="/trust">隐私与来源使用规范</Link>。
+          </p>
+        </div>
       </section>
     </main>
   );
