@@ -18,9 +18,15 @@ test("authenticated users can complete the board lifecycle with tenant isolation
   const boardName = `Launch sources · ${browserName} · ${testRun}`;
   const renamedBoardName = `Renamed sources · ${browserName} · ${testRun}`;
   await page.getByLabel("新 Board 名称").fill(boardName);
+  const createResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/api/boards") && response.request().method() === "POST"
+  );
   await page.getByRole("button", { name: "创建" }).click();
+  const createResponse = await createResponsePromise;
+  expect(createResponse.status()).toBe(201);
   const launchCard = page.getByRole("article").filter({ hasText: boardName });
-  await expect(launchCard).toBeVisible();
+  await expect(launchCard).toBeVisible({ timeout: 15_000 });
 
   const mutationId = crypto.randomUUID();
   const duplicateIds = await page.evaluate(async (id) => {
