@@ -282,7 +282,12 @@ export function ChatInspector({ boardId, node, graph, canRun }: ChatInspectorPro
     thread.latestRun.error?.retryable;
 
   return (
-    <div className="m4-chat" data-testid="chat-inspector">
+    <div
+      className="m4-chat"
+      data-testid="chat-inspector"
+      data-run-status={thread?.latestRun?.status ?? "idle"}
+      aria-busy={busy}
+    >
       <div className="m4-source-strip">
         <span>本次可用来源</span>
         <div>

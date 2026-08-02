@@ -7,8 +7,9 @@ import { magicLink } from "better-auth/plugins";
 
 import { getAuthDatabaseClient } from "@/lib/server/database";
 
+const productionDeployment = process.env.DEPLOYMENT_ENV === "production";
 const passwordEnabled =
-  process.env.NODE_ENV !== "production" && process.env.AUTH_ENABLE_PASSWORD === "true";
+  !productionDeployment && process.env.AUTH_ENABLE_PASSWORD === "true";
 const googleEnabled = Boolean(
   process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
 );
@@ -82,6 +83,6 @@ export const auth = betterAuth({
   },
   advanced: {
     cookiePrefix: "siftloom",
-    useSecureCookies: process.env.NODE_ENV === "production"
+    useSecureCookies: productionDeployment
   }
 });

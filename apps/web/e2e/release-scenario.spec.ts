@@ -159,6 +159,9 @@ test("completes the canonical private-alpha journey", async ({
   await expect(inspector).toContainText("已根据 2 个授权来源生成。", {
     timeout: 15_000
   });
+  await expect(inspector).toHaveAttribute("data-run-status", "completed", {
+    timeout: 15_000
+  });
   await inspector.getByRole("button", { name: /\[S1\]/ }).click();
   await expect(page.getByRole("dialog")).toContainText(
     "Alpha release fact belongs to the authorized text source."

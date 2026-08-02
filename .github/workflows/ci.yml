@@ -46,6 +46,7 @@ jobs:
       BETTER_AUTH_URL: http://127.0.0.1:3207
       BETTER_AUTH_SECRET: ci-only-better-auth-secret-at-least-32-bytes
       AUTH_ENABLE_PASSWORD: "true"
+      PLAYWRIGHT_PRODUCTION: "1"
       DEPLOYMENT_ENV: local
       SUPPORT_EMAIL: support@siftloom.local
       PRIVACY_CONTACT_EMAIL: privacy@siftloom.local
